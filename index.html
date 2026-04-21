@@ -25,6 +25,7 @@
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         
         .user-marker { background: #000; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 15px rgba(0,0,0,0.3); }
+        input:focus { outline: none; border-color: black; }
     </style>
 </head>
 <body>
@@ -36,18 +37,21 @@
             <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
         </div>
         <h1 class="text-3xl font-black mb-2 tracking-tighter">FAMILIATRACK</h1>
-        <p class="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-10">Sincronización Efímera Realtime</p>
+        <p class="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-10">Sincronización por Nombre de Viaje</p>
         
         <div class="grid grid-cols-1 gap-4">
+            <div class="space-y-2">
+                <input id="trip-name-input" type="text" placeholder="NOMBRE DEL VIAJE (Ej: RUTA1)" class="w-full p-4 rounded-2xl border-2 border-slate-100 font-bold text-center uppercase tracking-widest text-sm focus:border-black transition-all">
+                <p class="text-[9px] text-slate-400 font-bold">Viajero: Define un nombre / Vigilante: Busca el nombre</p>
+            </div>
+            
             <button onclick="startSession('VIAJERO')" class="group relative bg-black text-white py-5 rounded-3xl font-bold text-sm overflow-hidden transition-all hover:scale-[1.02] active:scale-95">
                 <span class="relative z-10">MODO VIAJERO (GPS)</span>
-                <div class="absolute inset-0 bg-gradient-to-r from-slate-800 to-black opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </button>
             <button onclick="startSession('VIGILANTE')" class="bg-slate-100 text-black py-5 rounded-3xl font-bold text-sm hover:bg-slate-200 transition-all active:scale-95">
-                ACCESO VIGILANTE
+                BUSCAR Y VIGILAR
             </button>
         </div>
-        <p class="mt-8 text-[10px] text-slate-400 px-4 font-medium italic">Nota: Para uso real entre 2 dispositivos en GitHub Pages, el JSON debe sincronizarse vía API externa (Firebase/Pusher).</p>
     </div>
 </div>
 
@@ -60,7 +64,7 @@
             <div class="glass p-4 flex items-center gap-4">
                 <div id="role-icon" class="w-10 h-10 bg-black rounded-xl flex items-center justify-center text-white font-black text-lg">V</div>
                 <div>
-                    <h2 id="role-name" class="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">ESTADO</h2>
+                    <h2 id="display-trip-name" class="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">VIAJE: ---</h2>
                     <div class="flex items-center gap-2">
                         <span id="conn-dot" class="status-dot offline"></span>
                         <span id="conn-text" class="text-xs font-black uppercase tracking-tight text-slate-600">Desconectado</span>
@@ -82,7 +86,7 @@
                     <p class="text-xs text-slate-400 italic text-center py-4">Toca el mapa para definir los puntos de control</p>
                 </div>
                 <button id="btn-transmit" onclick="toggleTransmission()" class="w-full bg-black text-white py-4 rounded-2xl font-black text-sm tracking-widest shadow-xl shadow-black/20 transition-all hover:bg-slate-900 active:scale-95">
-                    ACTIVAR TRANSMISIÓN EN VIVO
+                    INICIAR TRANSMISIÓN
                 </button>
             </div>
 
@@ -105,23 +109,24 @@
                 <div class="space-y-3">
                     <div id="v-checkpoints" class="space-y-2 max-h-40 overflow-y-auto pr-1"></div>
                 </div>
-                <button onclick="destroySession()" class="w-full bg-red-50 text-red-600 py-3 rounded-xl font-black text-[10px] border border-red-100 uppercase tracking-[0.15em] hover:bg-red-100 transition-colors">Cerrar y Destruir Todo</button>
+                <button onclick="destroySession()" class="w-full bg-red-50 text-red-600 py-3 rounded-xl font-black text-[10px] border border-red-100 uppercase tracking-[0.15em] hover:bg-red-100 transition-colors">Cerrar Sesión</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // Usamos LocalStorage como puente simulado (Para real-time entre 2 dispositivos en GH Pages se requiere Firebase)
-    const SESSION_KEY = "FT_VOLATILE_SYNC_JSON";
+    // Prefijo para soportar múltiples viajes en LocalStorage simultáneamente
+    const PREFIX = "FT_TRIP_";
     
     let STATE = {
         role: null,
         active: false,
+        tripName: "",
         data: {
             pos: { lat: 0, lng: 0, speed: 0, battery: 100 },
             route: [],
-            lastUpdate: 0, // Heartbeat para el "En Línea"
+            lastUpdate: 0,
             isTransmitting: false
         }
     };
@@ -129,22 +134,29 @@
     let map, userMarker, routeLine, markers = [];
 
     function startSession(role) {
+        const name = document.getElementById('trip-name-input').value.trim().toUpperCase();
+        if(!name) {
+            alert("Por favor, ingresa el nombre del viaje.");
+            return;
+        }
+        
+        STATE.tripName = name;
         STATE.role = role;
+        
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('app-ui').classList.remove('hidden');
         document.getElementById('role-icon').innerText = role.charAt(0);
+        document.getElementById('display-trip-name').innerText = `VIAJE: ${name}`;
         
         if(role === 'VIAJERO') {
             document.getElementById('panel-viajero').classList.remove('hidden');
-            document.getElementById('conn-text').innerText = "Listo para transmitir";
+            document.getElementById('conn-text').innerText = "Preparando ruta...";
         } else {
             document.getElementById('panel-vigilante').classList.remove('hidden');
-            document.getElementById('conn-text').innerText = "Buscando Viajero...";
+            document.getElementById('conn-text').innerText = `Buscando: ${name}`;
         }
 
         initMap();
-        
-        // Loop de Sincronización Real-Time (1 segundo)
         setInterval(syncCore, 1000); 
     }
 
@@ -170,7 +182,7 @@
                 STATE.data.route.push(point);
                 refreshVisuals();
                 updateViajeroUI();
-                saveToCloud(); // Guardamos inmediatamente para que el vigilante lo vea
+                saveToCloud();
             });
             
             navigator.geolocation.getCurrentPosition(p => {
@@ -196,7 +208,7 @@
     function updateViajeroUI() {
         const cont = document.getElementById('route-steps');
         if(STATE.data.route.length === 0) {
-            cont.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-4">Toca el mapa para definir los puntos de vigilancia</p>`;
+            cont.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-4">Toca el mapa para definir puntos de control</p>`;
             return;
         }
         cont.innerHTML = STATE.data.route.map(p => `
@@ -213,7 +225,7 @@
         STATE.data.isTransmitting = true;
         
         const btn = document.getElementById('btn-transmit');
-        btn.innerText = "SISTEMA ACTIVO ✅";
+        btn.innerText = "TRASMITIENDO VIAJE...";
         btn.classList.replace('bg-black', 'bg-emerald-500');
         
         navigator.geolocation.watchPosition(pos => {
@@ -221,9 +233,9 @@
                 lat: pos.coords.latitude,
                 lng: pos.coords.longitude,
                 speed: Math.round((pos.coords.speed || 0) * 3.6),
-                battery: 88 // Simulado
+                battery: 88 
             };
-            STATE.data.lastUpdate = Date.now(); // Heartbeat
+            STATE.data.lastUpdate = Date.now(); 
             
             userMarker.setLatLng([STATE.data.pos.lat, STATE.data.pos.lng]);
             map.panTo([STATE.data.pos.lat, STATE.data.pos.lng]);
@@ -232,14 +244,14 @@
             saveToCloud();
         }, null, { enableHighAccuracy: true });
 
-        pushNotif("Transmisión Encriptada Iniciada");
+        pushNotif(`Viaje "${STATE.tripName}" iniciado`);
     }
 
     function checkCheckpoints(pos) {
         STATE.data.route.forEach(p => {
             if(!p.reached) {
                 const dist = getDistance(pos.lat, pos.lng, p.lat, p.lng);
-                if(dist < 0.15) { // 150 metros
+                if(dist < 0.15) { 
                     p.reached = true;
                     pushNotif(`¡Check-in: ${p.name}!`);
                     refreshVisuals();
@@ -257,17 +269,14 @@
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
-    // --- SINCRONIZACIÓN CORE ---
-
     function saveToCloud() {
-        localStorage.setItem(SESSION_KEY, JSON.stringify(STATE.data));
+        localStorage.setItem(PREFIX + STATE.tripName, JSON.stringify(STATE.data));
     }
 
     function syncCore() {
-        const raw = localStorage.getItem(SESSION_KEY);
+        const raw = localStorage.getItem(PREFIX + STATE.tripName);
         
         if(STATE.role === 'VIAJERO') {
-            // El viajero solo envía, pero si está activo, actualiza su heartbeat
             if(STATE.active) {
                 STATE.data.lastUpdate = Date.now();
                 saveToCloud();
@@ -278,34 +287,33 @@
         }
 
         // --- Lógica del Vigilante ---
-        if(!raw) return;
+        if(!raw) {
+            document.getElementById('conn-text').innerText = "Esperando que inicie...";
+            return;
+        }
+        
         const cloudData = JSON.parse(raw);
         const now = Date.now();
         const diff = now - cloudData.lastUpdate;
 
-        // ¿Está en línea? (Menos de 6 segundos desde el último heartbeat)
         if(diff < 6000 && cloudData.isTransmitting) {
             document.getElementById('conn-dot').className = "status-dot online";
-            document.getElementById('conn-text').innerText = "EN LÍNEA";
+            document.getElementById('conn-text').innerText = "VIGILANDO";
         } else {
             document.getElementById('conn-dot').className = "status-dot offline";
-            document.getElementById('conn-text').innerText = "ESPERANDO SEÑAL...";
+            document.getElementById('conn-text').innerText = "FUERA DE LÍNEA";
         }
 
-        // Sincronizar Ruta en tiempo real
         if(JSON.stringify(STATE.data.route) !== JSON.stringify(cloudData.route)) {
             STATE.data.route = cloudData.route;
             refreshVisuals();
             renderVigilanteCheckpoints();
         }
 
-        // Actualizar Telemetría
         if(cloudData.pos) {
             document.getElementById('tel-speed').innerHTML = `${cloudData.pos.speed} <span class="text-[8px] not-italic text-slate-400">km/h</span>`;
             document.getElementById('tel-bat').innerText = `${cloudData.pos.battery}%`;
             userMarker.setLatLng([cloudData.pos.lat, cloudData.pos.lng]);
-            
-            // Auto-pan si hay señal
             if(diff < 5000) map.panTo([cloudData.pos.lat, cloudData.pos.lng]);
         }
 
@@ -330,20 +338,19 @@
         const box = document.getElementById('notif-box');
         const n = document.createElement('div');
         n.className = "notif-toast glass p-4 border-l-4 border-black text-[10px] font-bold shadow-xl pointer-events-auto flex flex-col";
-        n.innerHTML = `<span class="text-slate-400 text-[8px] mb-1 uppercase tracking-widest">Alerta de Seguridad</span>${msg}`;
+        n.innerHTML = `<span class="text-slate-400 text-[8px] mb-1 uppercase tracking-widest">Estado del Viaje</span>${msg}`;
         box.prepend(n);
         setTimeout(() => n.remove(), 5000);
     }
 
     function destroySession() {
-        if(confirm("¿Estás seguro de finalizar? La ruta y los datos de ubicación se destruirán por completo.")) {
-            localStorage.removeItem(SESSION_KEY);
+        if(confirm("¿Deseas cerrar la vigilancia?")) {
             location.reload();
         }
     }
 
     function resetData() {
-        localStorage.removeItem(SESSION_KEY);
+        localStorage.removeItem(PREFIX + STATE.tripName);
         STATE.data.route = [];
         refreshVisuals();
         updateViajeroUI();
