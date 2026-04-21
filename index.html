@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FamiliaTrack - Sistema de Rastreo Profesional</title>
+    <title>FamiliaTrack - Centro de Control y Vigilancia</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -11,9 +11,11 @@
     <style>
         :root {
             --primary: #ffffff;
-            --bg: #0a0a0a;
-            --surface: #1a1a1a;
-            --border: #333333;
+            --bg: #050505;
+            --surface: #111111;
+            --border: #222222;
+            --accent-red: #ff3b5c;
+            --accent-green: #00f281;
         }
         body { 
             font-family: 'Inter', sans-serif; 
@@ -37,42 +39,51 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 16px;
+            padding: 20px;
             box-sizing: border-box;
         }
         .pointer-events-auto { pointer-events: auto; }
-        .glass-dark {
-            background: rgba(10, 10, 10, 0.85);
-            backdrop-filter: blur(20px);
+        .glass-panel {
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(25px);
             border: 1px solid var(--border);
-            border-radius: 20px;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         }
         .pin-input {
-            letter-spacing: 1em;
+            letter-spacing: 0.8em;
             text-align: center;
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             background: #111;
             border: 1px solid #333;
             color: white;
-            padding: 12px;
-            border-radius: 12px;
-            width: 150px;
+            padding: 15px;
+            border-radius: 16px;
+            width: 180px;
         }
-        .notif-badge {
-            animation: slideIn 0.3s ease-out;
+        .log-item {
+            border-left: 2px solid #333;
+            padding-left: 12px;
+            margin-bottom: 8px;
+            font-size: 10px;
         }
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
+        .pulse-red {
+            animation: pulse-red 2s infinite;
+        }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(255, 59, 92, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 59, 92, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 59, 92, 0); }
+        }
+        .notification-toast {
+            animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes slideInRight {
+            from { transform: translateX(120%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
-        .status-dot {
-            width: 8px; height: 8px; border-radius: 50%;
-            display: inline-block;
-            margin-right: 6px;
-        }
-        /* Estilo personalizado para Leaflet */
         .leaflet-vignette {
-            box-shadow: inset 0 0 100px rgba(0,0,0,0.5);
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.7);
             pointer-events: none;
             position: absolute;
             top:0; left:0; width:100%; height:100%; z-index: 1000;
@@ -81,17 +92,20 @@
 </head>
 <body>
 
-<!-- Pantalla de Login con PIN -->
+<!-- Pantalla de Login -->
 <div id="screen-auth" class="fixed inset-0 z-[2000] bg-black flex flex-col items-center justify-center p-6 text-center">
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold tracking-tighter mb-2">FAMILIATRACK</h1>
-        <p class="text-gray-500 text-sm">Ingresa el PIN de acceso familiar</p>
+    <div class="mb-10">
+        <div class="w-16 h-16 bg-white rounded-2xl mx-auto mb-6 flex items-center justify-center rotate-3">
+            <svg class="w-10 h-10 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+        </div>
+        <h1 class="text-4xl font-extrabold tracking-tighter mb-2">FAMILIATRACK <span class="text-xs align-top font-normal text-gray-500">PRO</span></h1>
+        <p class="text-gray-400 text-sm font-medium">SISTEMA DE VIGILANCIA ENCRIPTADO</p>
     </div>
-    <div class="space-y-4">
-        <input type="password" id="pin-field" maxlength="4" placeholder="••••" class="pin-input outline-none focus:border-white transition-all">
-        <div class="grid grid-cols-2 gap-3 mt-4">
-            <button onclick="auth('viajero')" class="bg-white text-black font-bold py-4 px-6 rounded-2xl hover:bg-gray-200 transition-all">VIAJERO</button>
-            <button onclick="auth('vigilante')" class="border border-white text-white font-bold py-4 px-6 rounded-2xl hover:bg-white hover:text-black transition-all">VIGILANTE</button>
+    <div class="space-y-6">
+        <input type="password" id="pin-field" maxlength="4" placeholder="••••" class="pin-input outline-none focus:border-white transition-all font-mono">
+        <div class="flex flex-col gap-3 w-64">
+            <button onclick="auth('VIAJERO')" class="bg-white text-black font-bold py-5 rounded-2xl hover:bg-gray-200 transition-all shadow-lg">ACCESO VIAJERO</button>
+            <button onclick="auth('VIGILANTE')" class="bg-transparent border border-gray-700 text-white font-bold py-5 rounded-2xl hover:border-white transition-all">PANEL VIGILANTE</button>
         </div>
     </div>
 </div>
@@ -101,60 +115,81 @@
     <div class="leaflet-vignette"></div>
 
     <div class="ui-overlay">
-        <!-- Top Bar -->
+        <!-- Barra Superior (Status) -->
         <div class="flex justify-between items-start pointer-events-auto">
-            <div class="glass-dark p-4 flex items-center gap-4">
-                <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                    <span id="role-icon" class="text-black font-bold text-lg">V</span>
+            <div class="glass-panel p-4 flex items-center gap-5">
+                <div id="status-icon" class="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg transition-all">
+                    <span id="role-initial" class="text-black font-bold text-xl">V</span>
                 </div>
                 <div>
-                    <div id="role-label" class="font-bold text-xs uppercase tracking-widest text-gray-400">VIAJERO</div>
-                    <div id="user-status" class="text-sm font-semibold text-white">Sincronizando GPS...</div>
+                    <div id="role-display" class="font-bold text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-0.5">VIAJERO</div>
+                    <div id="connection-status" class="text-sm font-bold flex items-center">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+                        SISTEMA ACTIVO
+                    </div>
                 </div>
             </div>
 
-            <div class="flex flex-col gap-2 items-end">
-                <div id="notif-container" class="flex flex-col gap-2"></div>
+            <div id="notif-area" class="flex flex-col gap-3 items-end w-64">
+                <!-- Notificaciones flotantes -->
             </div>
         </div>
 
-        <!-- Bottom Controls -->
-        <div class="flex flex-col gap-4 pointer-events-auto max-w-md mx-auto w-full">
+        <!-- Barra Inferior (Control) -->
+        <div class="flex flex-col gap-5 pointer-events-auto max-w-lg mx-auto w-full">
             
-            <!-- Panel de Ruta (Viajero) -->
-            <div id="panel-viajero" class="hidden glass-dark p-5 space-y-4">
-                <div class="flex justify-between items-center border-b border-gray-800 pb-3">
-                    <h3 class="text-sm font-bold tracking-widest">PLANIFICADOR</h3>
-                    <button onclick="exportData()" class="text-[10px] text-gray-400 border border-gray-700 px-2 py-1 rounded hover:bg-white hover:text-black">DESCARGAR JSON</button>
+            <!-- Panel Viajero -->
+            <div id="panel-viajero" class="hidden glass-panel p-6 space-y-5 border-t-2 border-white/10">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xs font-black tracking-widest text-gray-400">PLAN DE VIGILANCIA</h3>
+                    <div class="flex gap-2">
+                        <button onclick="resetRoute()" class="text-[9px] text-gray-500 hover:text-white uppercase tracking-tighter">Limpiar</button>
+                    </div>
                 </div>
                 
-                <div id="route-steps" class="space-y-2 overflow-y-auto max-h-40 pr-2">
-                    <!-- Dinámico -->
+                <div id="route-list" class="space-y-3 max-h-48 overflow-y-auto custom-scrollbar">
+                    <p id="empty-msg" class="text-center text-xs text-gray-600 py-4 italic">Toca el mapa para establecer la ruta de seguridad...</p>
                 </div>
 
-                <div id="instr-viajero" class="text-xs text-gray-500 italic bg-white/5 p-2 rounded text-center">
-                    Toca el mapa para marcar: Origen → Paradas → Destino
+                <div class="flex gap-3">
+                    <button id="btn-start" onclick="initTracking()" class="flex-1 bg-white text-black font-black py-4 rounded-xl text-sm hover:scale-[1.02] transition-all disabled:opacity-50">
+                        INICIAR MISIÓN
+                    </button>
+                    <button onclick="exportData()" class="bg-gray-900 p-4 rounded-xl border border-gray-800 hover:border-gray-600 transition-all">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    </button>
                 </div>
-
-                <button id="btn-action" onclick="startTracking()" class="w-full bg-white text-black font-bold py-4 rounded-2xl hover:scale-[1.02] active:scale-95 transition-all">
-                    CONFIRMAR RUTA Y ENVIAR
-                </button>
             </div>
 
-            <!-- Panel de Estado (Vigilante) -->
-            <div id="panel-vigilante" class="hidden glass-dark p-5 space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-white/5 p-3 rounded-xl border border-white/10">
-                        <span class="text-[10px] text-gray-500 block uppercase">Velocidad</span>
-                        <span id="speed-val" class="text-2xl font-bold">0 <small class="text-xs font-normal">km/h</small></span>
+            <!-- Panel Vigilante (Centro de Control) -->
+            <div id="panel-vigilante" class="hidden glass-panel p-6 space-y-6">
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="bg-white/5 p-4 rounded-2xl border border-white/5 text-center">
+                        <span class="text-[9px] text-gray-500 block uppercase mb-1">Velocidad</span>
+                        <span id="v-speed" class="text-xl font-black">0 <small class="text-[10px] font-medium text-gray-400">km/h</small></span>
                     </div>
-                    <div class="bg-white/5 p-3 rounded-xl border border-white/10">
-                        <span class="text-[10px] text-gray-500 block uppercase">Última Actividad</span>
-                        <span id="time-val" class="text-2xl font-bold">--:--</span>
+                    <div class="bg-white/5 p-4 rounded-2xl border border-white/5 text-center">
+                        <span class="text-[9px] text-gray-500 block uppercase mb-1">Altitud</span>
+                        <span id="v-alt" class="text-xl font-black">0 <small class="text-[10px] font-medium text-gray-400">m</small></span>
+                    </div>
+                    <div id="v-signal" class="bg-white/5 p-4 rounded-2xl border border-white/5 text-center">
+                        <span class="text-[9px] text-gray-500 block uppercase mb-1">Señal GPS</span>
+                        <span class="text-xl font-black text-green-500">EXC</span>
                     </div>
                 </div>
-                <div id="progress-container" class="space-y-2">
-                    <!-- Progreso de la ruta del viajero -->
+
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Estado de Puntos de Control</h3>
+                        <span id="v-progress" class="text-[10px] bg-white text-black px-2 py-0.5 rounded-full font-bold">0%</span>
+                    </div>
+                    <div id="v-route-progress" class="space-y-2">
+                        <!-- Progreso dinámico sincronizado -->
+                    </div>
+                </div>
+
+                <div class="bg-black/40 rounded-xl p-4 border border-white/5 h-24 overflow-y-auto" id="event-logs">
+                    <p class="text-[9px] text-gray-600 font-mono">Esperando transmisión de datos...</p>
                 </div>
             </div>
 
@@ -163,149 +198,169 @@
 </div>
 
 <script>
-    const APP_PIN = "1234"; // PIN de ejemplo
-    let STATE = {
-        role: null,
-        points: [], // {lat, lng, type, name, completed: false}
-        currentPos: null,
-        isTracking: false,
-        log: []
+    const CONFIG = {
+        pin: "1234",
+        geofenceRadius: 0.15, // 150 metros
+        syncKey: "ftrack_secure_link_77"
     };
 
-    let map, userMarker, polyline;
-    let markers = [];
+    let STATE = {
+        role: null,
+        points: [], // {lat, lng, type, name, status: 'pending'|'reached', timeReached: null}
+        current: { lat: 0, lng: 0, speed: 0, alt: 0, time: '--:--' },
+        logs: [],
+        active: false
+    };
+
+    let map, userMarker, routeLine;
+    let mapMarkers = [];
 
     function auth(role) {
-        const input = document.getElementById('pin-field').value;
-        if (input === APP_PIN) {
+        const pin = document.getElementById('pin-field').value;
+        if (pin === CONFIG.pin) {
             STATE.role = role;
             document.getElementById('screen-auth').style.display = 'none';
             document.getElementById('main-ui').style.display = 'block';
-            document.getElementById('role-label').innerText = role;
-            document.getElementById('role-icon').innerText = role.charAt(0).toUpperCase();
+            document.getElementById('role-display').innerText = role;
+            document.getElementById('role-initial').innerText = role.charAt(0);
             
-            if(role === 'viajero') {
+            if(role === 'VIAJERO') {
                 document.getElementById('panel-viajero').style.display = 'block';
             } else {
                 document.getElementById('panel-vigilante').style.display = 'block';
+                document.getElementById('status-icon').classList.add('bg-orange-500');
             }
-            initApp();
+            initMap();
         } else {
-            alert("PIN Incorrecto");
+            alert("ACCESO DENEGADO");
             document.getElementById('pin-field').value = "";
         }
     }
 
-    function initApp() {
-        // Mapa oscuro minimalista
-        map = L.map('map', { zoomControl: false, attributionControl: false }).setView([4.6, -74], 6);
+    function initMap() {
+        map = L.map('map', { 
+            zoomControl: false, 
+            attributionControl: false,
+            fadeAnimation: true 
+        }).setView([0,0], 2);
+
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
         userMarker = L.circleMarker([0, 0], {
-            radius: 8, fillColor: 'white', color: '#000', weight: 2, fillOpacity: 1
+            radius: 10, fillColor: 'white', color: '#000', weight: 4, fillOpacity: 1
         }).addTo(map);
 
-        polyline = L.polyline([], { color: 'rgba(255,255,255,0.3)', weight: 3, dashArray: '10, 10' }).addTo(map);
+        routeLine = L.polyline([], { 
+            color: 'white', weight: 2, dashArray: '8, 12', opacity: 0.5 
+        }).addTo(map);
 
-        if (STATE.role === 'viajero') {
-            map.on('click', onMapClick);
+        if (STATE.role === 'VIAJERO') {
+            map.on('click', handleMapClick);
         }
 
-        // Recuperar posición inicial
         navigator.geolocation.getCurrentPosition(p => {
-            const latlng = [p.coords.latitude, p.coords.longitude];
-            map.setView(latlng, 15);
-            userMarker.setLatLng(latlng);
+            const ll = [p.coords.latitude, p.coords.longitude];
+            map.setView(ll, 16);
+            userMarker.setLatLng(ll);
         });
 
-        // Bucle de sincronización
-        setInterval(sync, 2000);
+        // Loop de sincronización profesional
+        setInterval(syncSession, 1500);
     }
 
-    function onMapClick(e) {
-        if (STATE.isTracking) return;
+    function handleMapClick(e) {
+        if (STATE.active) return;
         
-        let type = 'parada';
-        let color = '#888';
-        let label = 'Parada';
+        let type = 'checkpoint';
+        let color = '#555';
+        let name = `Punto ${STATE.points.length + 1}`;
 
         if (STATE.points.length === 0) {
-            type = 'inicio';
+            type = 'origin';
             color = '#fff';
-            label = 'Inicio';
-        } else if (confirm("¿Este es el destino final?")) {
-            type = 'llegada';
+            name = 'Punto de Partida';
+        } else if (confirm("¿Marcar como DESTINO FINAL?")) {
+            type = 'destination';
             color = '#ff3b5c';
-            label = 'Destino';
+            name = 'Objetivo Final';
         }
 
         const point = {
             lat: e.latlng.lat,
             lng: e.latlng.lng,
             type: type,
-            name: `${label} #${STATE.points.length + 1}`,
-            completed: false
+            name: name,
+            status: 'pending',
+            timeReached: null
         };
 
         STATE.points.push(point);
-        addPointMarker(point, color);
-        updateRouteUI();
+        renderMarker(point, color);
+        updateViajeroUI();
+        save();
     }
 
-    function addPointMarker(p, color) {
+    function renderMarker(p, color) {
         const m = L.circleMarker([p.lat, p.lng], {
-            radius: 6, fillColor: color, color: '#fff', weight: 1, fillOpacity: 0.8
-        }).addTo(map).bindTooltip(p.name, { direction: 'top', className: 'bg-black text-white border-0 text-[10px]' });
-        markers.push(m);
+            radius: 7, fillColor: color, color: '#fff', weight: 1, fillOpacity: 0.9
+        }).addTo(map).bindTooltip(p.name, { 
+            permanent: false, 
+            className: 'bg-black text-white border-0 text-[10px] font-bold p-1 rounded' 
+        });
+        mapMarkers.push(m);
         
-        const path = STATE.points.map(pt => [pt.lat, pt.lng]);
-        polyline.setLatLngs(path);
+        routeLine.setLatLngs(STATE.points.map(pt => [pt.lat, pt.lng]));
     }
 
-    function updateRouteUI() {
-        const container = document.getElementById('route-steps');
-        container.innerHTML = STATE.points.map((p, i) => `
-            <div class="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/5">
+    function updateViajeroUI() {
+        const list = document.getElementById('route-list');
+        document.getElementById('empty-msg').style.display = 'none';
+        
+        list.innerHTML = STATE.points.map((p, i) => `
+            <div class="flex items-center justify-between bg-white/5 p-4 rounded-2xl border border-white/5">
                 <div class="flex items-center gap-3">
-                    <span class="status-dot" style="background: ${p.completed ? '#4ade80' : '#444'}"></span>
-                    <span class="text-xs font-semibold">${p.name}</span>
+                    <div class="w-1.5 h-1.5 rounded-full ${p.status === 'reached' ? 'bg-green-500' : 'bg-gray-700'}"></div>
+                    <span class="text-xs font-bold uppercase tracking-tighter">${p.name}</span>
                 </div>
-                <span class="text-[9px] text-gray-500">${p.completed ? 'COMPLETADO' : 'PENDIENTE'}</span>
+                <span class="text-[9px] text-gray-500">${p.status === 'reached' ? 'LLEGADA: ' + p.timeReached : 'POR LLEGAR'}</span>
             </div>
         `).join('');
     }
 
-    function startTracking() {
-        if (STATE.points.length < 2) return alert("Define al menos origen y destino");
-        STATE.isTracking = true;
-        document.getElementById('btn-action').innerText = "RUTEO EN VIVO...";
-        document.getElementById('btn-action').className = "w-full bg-blue-600 text-white font-bold py-4 rounded-2xl animate-pulse";
-        document.getElementById('instr-viajero').innerText = "Compartiendo ubicación en tiempo real.";
+    function initTracking() {
+        if (STATE.points.length < 2) return alert("Ruta incompleta.");
+        STATE.active = true;
+        document.getElementById('btn-start').disabled = true;
+        document.getElementById('btn-start').innerText = "TRANSMITIENDO...";
+        addLog("MISIÓN INICIADA - TRANSMISIÓN GPS ACTIVA");
 
         navigator.geolocation.watchPosition(pos => {
             const latlng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-            STATE.currentPos = { 
-                ...latlng, 
+            STATE.current = { 
+                lat: latlng.lat, 
+                lng: latlng.lng, 
                 speed: pos.coords.speed || 0,
-                time: new Date().toLocaleTimeString()
+                alt: pos.coords.altitude || 0,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             };
             userMarker.setLatLng([latlng.lat, latlng.lng]);
             map.panTo([latlng.lat, latlng.lng]);
             
-            checkProximity(latlng);
-            saveToCloud();
+            checkGeofence(latlng);
+            save();
         }, null, { enableHighAccuracy: true });
     }
 
-    function checkProximity(curr) {
-        STATE.points.forEach((p, index) => {
-            if (!p.completed) {
+    function checkGeofence(curr) {
+        STATE.points.forEach(p => {
+            if (p.status === 'pending') {
                 const dist = getDistance(curr.lat, curr.lng, p.lat, p.lng);
-                if (dist < 0.1) { // 100 metros
-                    p.completed = true;
-                    notify(`Viajero llegó a: ${p.name}`);
-                    logEvent(`Llegada a ${p.name}`);
-                    updateRouteUI();
+                if (dist <= CONFIG.geofenceRadius) {
+                    p.status = 'reached';
+                    p.timeReached = new Date().toLocaleTimeString();
+                    addLog(`ZONA ALCANZADA: ${p.name.toUpperCase()}`);
+                    pushNotification(`VIAJERO EN ${p.name.toUpperCase()}`);
+                    updateViajeroUI();
                 }
             }
         });
@@ -313,86 +368,120 @@
 
     function getDistance(lat1, lon1, lat2, lon2) {
         const R = 6371;
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const dLat = (lat2-lat1) * Math.PI/180;
+        const dLon = (lon2-lon1) * Math.PI/180;
         const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c;
+                  Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
-    function saveToCloud() {
-        localStorage.setItem(`track_data_${APP_PIN}`, JSON.stringify(STATE));
+    function save() {
+        localStorage.setItem(CONFIG.syncKey, JSON.stringify(STATE));
     }
 
-    function sync() {
-        const raw = localStorage.getItem(`track_data_${APP_PIN}`);
-        if (!raw) return;
-        const data = JSON.parse(raw);
+    function syncSession() {
+        const dataRaw = localStorage.getItem(CONFIG.syncKey);
+        if (!dataRaw) return;
+        const remote = JSON.parse(dataRaw);
 
-        if (STATE.role === 'vigilante') {
-            // Sincronizar puntos en el mapa del vigilante
-            if (STATE.points.length !== data.points.length) {
-                STATE.points = data.points;
-                markers.forEach(m => map.removeLayer(m));
-                markers = [];
+        if (STATE.role === 'VIGILANTE') {
+            // Sincronizar Ruta en Mapa
+            if (STATE.points.length !== remote.points.length) {
+                STATE.points = remote.points;
+                mapMarkers.forEach(m => map.removeLayer(m));
+                mapMarkers = [];
                 STATE.points.forEach(p => {
-                    const color = p.type === 'inicio' ? '#fff' : (p.type === 'llegada' ? '#ff3b5c' : '#888');
-                    addPointMarker(p, color);
+                    const c = p.type === 'origin' ? '#fff' : (p.type === 'destination' ? '#ff3b5c' : '#888');
+                    renderMarker(p, c);
                 });
             }
 
-            // Sincronizar posición actual
-            if (data.currentPos) {
-                userMarker.setLatLng([data.currentPos.lat, data.currentPos.lng]);
-                document.getElementById('speed-val').innerHTML = `${Math.round((data.currentPos.speed || 0) * 3.6)} <small class="text-xs font-normal">km/h</small>`;
-                document.getElementById('time-val').innerText = data.currentPos.time;
-                document.getElementById('user-status').innerText = "Rastreando Viajero...";
+            // Detectar cambios de estado para notificar al vigilante localmente
+            remote.points.forEach((rp, i) => {
+                if (STATE.points[i] && STATE.points[i].status !== rp.status && rp.status === 'reached') {
+                    pushNotification(`¡ALERTA! VIAJERO LLEGÓ A ${rp.name.toUpperCase()}`);
+                    STATE.points[i].status = 'reached';
+                }
+            });
+
+            // Telemetría
+            if (remote.current) {
+                document.getElementById('v-speed').innerHTML = `${Math.round(remote.current.speed * 3.6)} <small class="text-[10px] text-gray-500">km/h</small>`;
+                document.getElementById('v-alt').innerHTML = `${Math.round(remote.current.alt)} <small class="text-[10px] text-gray-500">m</small>`;
+                document.getElementById('time-val')?.innerText || (document.getElementById('time-val') && (document.getElementById('time-val').innerText = remote.current.time));
+                userMarker.setLatLng([remote.current.lat, remote.current.lng]);
                 
-                // Si la posición cambió, centrar mapa opcionalmente
-                if (!STATE.currentPos || STATE.currentPos.lat !== data.currentPos.lat) {
-                    map.panTo([data.currentPos.lat, data.currentPos.lng]);
-                    STATE.currentPos = data.currentPos;
+                if (remote.active) {
+                    map.panTo([remote.current.lat, remote.current.lng]);
+                    document.getElementById('connection-status').innerHTML = '<span class="w-2 h-2 bg-red-500 rounded-full mr-2 pulse-red"></span> RASTREO EN VIVO';
                 }
             }
 
-            // Renderizar progreso para vigilante
-            const progContainer = document.getElementById('progress-container');
-            progContainer.innerHTML = data.points.map(p => `
-                <div class="flex items-center gap-3 bg-white/5 p-2 rounded-lg border border-white/5">
-                    <div class="w-2 h-2 rounded-full ${p.completed ? 'bg-green-500 shadow-[0_0_8px_#4ade80]' : 'bg-gray-700'}"></div>
-                    <span class="text-[11px] font-bold ${p.completed ? 'text-white' : 'text-gray-500'}">${p.name}</span>
+            // Logs
+            if (remote.logs.length > STATE.logs.length) {
+                STATE.logs = remote.logs;
+                const logCont = document.getElementById('event-logs');
+                logCont.innerHTML = STATE.logs.map(l => `
+                    <div class="log-item">
+                        <span class="text-gray-500 mr-2">[${l.time}]</span>
+                        <span class="font-bold text-white uppercase">${l.msg}</span>
+                    </div>
+                `).reverse().join('');
+            }
+
+            // Progreso
+            const reachedCount = remote.points.filter(p => p.status === 'reached').length;
+            const perc = remote.points.length > 0 ? Math.round((reachedCount / remote.points.length) * 100) : 0;
+            document.getElementById('v-progress').innerText = `${perc}%`;
+            
+            document.getElementById('v-route-progress').innerHTML = remote.points.map(p => `
+                <div class="flex items-center justify-between text-[11px] p-2 bg-white/5 rounded-lg">
+                    <span class="${p.status === 'reached' ? 'text-green-400 font-bold' : 'text-gray-600'}">${p.name}</span>
+                    <span class="text-[9px] opacity-60">${p.status === 'reached' ? '✓' : '...' }</span>
                 </div>
             `).join('');
         }
     }
 
-    function notify(msg) {
-        const container = document.getElementById('notif-container');
+    function pushNotification(msg) {
+        const area = document.getElementById('notif-area');
         const n = document.createElement('div');
-        n.className = "notif-badge glass-dark p-3 text-xs font-bold border-l-4 border-white flex items-center gap-2 pointer-events-auto";
-        n.innerHTML = `<span class="animate-ping w-2 h-2 rounded-full bg-white"></span> ${msg}`;
-        container.prepend(n);
-        setTimeout(() => n.remove(), 5000);
+        n.className = "notification-toast glass-panel p-4 border-l-4 border-white flex items-start gap-3 pointer-events-auto w-full";
+        n.innerHTML = `
+            <div class="bg-white rounded p-1"><svg class="w-3 h-3 text-black" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/></svg></div>
+            <div>
+                <p class="text-[10px] font-black text-white leading-tight uppercase">${msg}</p>
+                <p class="text-[8px] text-gray-500 mt-1">${new Date().toLocaleTimeString()}</p>
+            </div>
+        `;
+        area.prepend(n);
+        setTimeout(() => n.remove(), 6000);
     }
 
-    function logEvent(msg) {
-        STATE.log.push({ event: msg, time: new Date().toISOString() });
-        saveToCloud();
+    function addLog(msg) {
+        STATE.logs.push({ msg, time: new Date().toLocaleTimeString() });
+        save();
+    }
+
+    function resetRoute() {
+        if (STATE.active) return;
+        STATE.points = [];
+        STATE.logs = [];
+        mapMarkers.forEach(m => map.removeLayer(m));
+        mapMarkers = [];
+        routeLine.setLatLngs([]);
+        updateViajeroUI();
+        save();
     }
 
     function exportData() {
-        const blob = new Blob([JSON.stringify(STATE, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `familia_track_${new Date().getTime()}.json`;
-        a.click();
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(STATE, null, 4));
+        const dlAnchorElem = document.createElement('a');
+        dlAnchorElem.setAttribute("href", dataStr);
+        dlAnchorElem.setAttribute("download", `mision_track_${Date.now()}.json`);
+        dlAnchorElem.click();
     }
 </script>
 
 </body>
 </html>
-   
-            
-   
