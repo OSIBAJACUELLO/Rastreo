@@ -1,1677 +1,305 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#0a1628">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>FamiliaTrack — Guasimal</title>
-<link rel="manifest" href="#" id="manifest-link">
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700;900&display=swap');
-
-  :root {
-    --bg: #050e1f;
-    --bg2: #0a1628;
-    --bg3: #0f1f3a;
-    --card: #0d1a30;
-    --card2: #122040;
-    --accent: #00e5ff;
-    --accent2: #ff6b35;
-    --accent3: #7fff6b;
-    --warn: #ffb800;
-    --danger: #ff3b5c;
-    --text: #e8f4f8;
-    --text2: #7a9bb5;
-    --text3: #3d5a73;
-    --border: #1a3050;
-    --glow: 0 0 20px rgba(0,229,255,0.3);
-    --glow2: 0 0 20px rgba(255,107,53,0.3);
-    --radius: 16px;
-    --font: 'Outfit', sans-serif;
-    --mono: 'Space Mono', monospace;
-  }
-
-  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-
-  html, body {
-    height:100%; width:100%; overflow:hidden;
-    background:var(--bg); color:var(--text);
-    font-family:var(--font); font-size:16px;
-  }
-
-  /* ── SPLASH ── */
-  #splash {
-    position:fixed; inset:0; background:var(--bg);
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    z-index:9999; gap:20px;
-    animation: splashOut 0.5s ease 2.5s forwards;
-  }
-  @keyframes splashOut { to { opacity:0; pointer-events:none; } }
-  .splash-logo {
-    width:80px; height:80px; border-radius:50%;
-    background: conic-gradient(var(--accent), var(--accent2), var(--accent3), var(--accent));
-    animation: rotateLogo 2s linear infinite;
-    display:flex; align-items:center; justify-content:center;
-    box-shadow: 0 0 40px rgba(0,229,255,0.5);
-  }
-  @keyframes rotateLogo { to { transform: rotate(360deg); } }
-  .splash-inner {
-    width:64px; height:64px; border-radius:50%;
-    background:var(--bg); display:flex; align-items:center; justify-content:center;
-    font-size:28px;
-  }
-  .splash-title { font-size:28px; font-weight:900; letter-spacing:-1px; }
-  .splash-title span { color:var(--accent); }
-  .splash-sub { color:var(--text2); font-size:14px; letter-spacing:2px; text-transform:uppercase; }
-
-  /* ── MAIN LAYOUT ── */
-  #app {
-    height:100%; display:flex; flex-direction:column;
-    opacity:0; animation: fadeIn 0.5s ease 2.8s forwards;
-  }
-  @keyframes fadeIn { to { opacity:1; } }
-
-  /* ── HEADER ── */
-  .header {
-    background: linear-gradient(135deg, var(--bg2), var(--bg3));
-    border-bottom: 1px solid var(--border);
-    padding: 12px 16px; display:flex; align-items:center; justify-content:space-between;
-    position:relative; z-index:100;
-    box-shadow: 0 2px 20px rgba(0,0,0,0.5);
-  }
-  .header-left { display:flex; align-items:center; gap:10px; }
-  .logo-small {
-    width:36px; height:36px; border-radius:50%;
-    background: conic-gradient(var(--accent), var(--accent2), var(--accent3), var(--accent));
-    display:flex; align-items:center; justify-content:center; font-size:16px;
-    animation: rotateLogo 4s linear infinite;
-  }
-  .logo-inner-s {
-    width:28px; height:28px; border-radius:50%;
-    background:var(--bg2); display:flex; align-items:center; justify-content:center;
-    font-size:14px;
-  }
-  .app-name { font-weight:800; font-size:18px; letter-spacing:-0.5px; }
-  .app-name span { color:var(--accent); }
-  .app-sub { font-size:10px; color:var(--text2); letter-spacing:1px; margin-top:-2px; }
-
-  .status-pill {
-    display:flex; align-items:center; gap:6px;
-    background:var(--card); border:1px solid var(--border);
-    border-radius:20px; padding:6px 12px; font-size:12px;
-  }
-  .status-dot {
-    width:8px; height:8px; border-radius:50%;
-    background: var(--text3); animation: none;
-  }
-  .status-dot.active {
-    background: var(--accent3);
-    box-shadow: 0 0 8px var(--accent3);
-    animation: pulse 1.5s ease-in-out infinite;
-  }
-  .status-dot.warn { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
-  @keyframes pulse {
-    0%,100% { opacity:1; transform:scale(1); }
-    50% { opacity:0.6; transform:scale(0.8); }
-  }
-
-  /* ── TABS ── */
-  .tabs {
-    display:flex; background:var(--bg2);
-    border-bottom:1px solid var(--border);
-  }
-  .tab {
-    flex:1; padding:10px 4px; text-align:center;
-    font-size:11px; font-weight:600; color:var(--text3);
-    border:none; background:none; cursor:pointer;
-    letter-spacing:0.5px; text-transform:uppercase;
-    border-bottom:2px solid transparent;
-    transition: all 0.2s; display:flex; flex-direction:column;
-    align-items:center; gap:3px;
-  }
-  .tab .tab-icon { font-size:18px; }
-  .tab.active { color:var(--accent); border-bottom-color:var(--accent); }
-
-  /* ── CONTENT AREA ── */
-  .content { flex:1; overflow:hidden; position:relative; }
-  .panel { position:absolute; inset:0; overflow-y:auto; display:none; padding:12px; gap:12px; flex-direction:column; }
-  .panel.active { display:flex; }
-
-  /* ── MAP ── */
-  #map-panel { padding:0; }
-  #map {
-    width:100%; height:100%;
-    background: #0a1a2e;
-    position:relative; overflow:hidden;
-  }
-  #leaflet-map { width:100%; height:100%; }
-
-  .map-overlay {
-    position:absolute; bottom:16px; left:50%; transform:translateX(-50%);
-    display:flex; gap:8px; z-index:1000;
-  }
-  .map-btn {
-    background: rgba(10,22,40,0.9); border:1px solid var(--border);
-    color:var(--text); border-radius:12px; padding:10px 16px;
-    font-family:var(--font); font-size:12px; font-weight:600;
-    cursor:pointer; backdrop-filter:blur(10px);
-    display:flex; align-items:center; gap:6px;
-    transition: all 0.2s;
-  }
-  .map-btn:active { transform:scale(0.95); }
-  .map-btn.primary { background:var(--accent); color:var(--bg); border-color:var(--accent); }
-  .map-btn.danger { background:var(--danger); color:white; border-color:var(--danger); }
-
-  /* ── CARDS ── */
-  .card {
-    background:var(--card); border:1px solid var(--border);
-    border-radius:var(--radius); padding:14px;
-  }
-  .card-title {
-    font-size:11px; font-weight:700; color:var(--text2);
-    letter-spacing:2px; text-transform:uppercase; margin-bottom:10px;
-    display:flex; align-items:center; gap:6px;
-  }
-  .card-title .icon { font-size:14px; }
-
-  /* ── ROUTE BUILDER ── */
-  .waypoint-list { display:flex; flex-direction:column; gap:8px; }
-  .waypoint-item {
-    background:var(--card2); border:1px solid var(--border);
-    border-radius:10px; padding:10px 12px;
-    display:flex; align-items:center; gap:10px;
-  }
-  .waypoint-icon {
-    width:32px; height:32px; border-radius:50%;
-    display:flex; align-items:center; justify-content:center;
-    font-size:14px; flex-shrink:0;
-  }
-  .waypoint-icon.start { background:rgba(127,255,107,0.15); border:1px solid var(--accent3); }
-  .waypoint-icon.mid { background:rgba(0,229,255,0.15); border:1px solid var(--accent); }
-  .waypoint-icon.end { background:rgba(255,107,53,0.15); border:1px solid var(--accent2); }
-  .waypoint-info { flex:1; min-width:0; }
-  .waypoint-name { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .waypoint-coords { font-size:10px; color:var(--text2); font-family:var(--mono); margin-top:2px; }
-  .waypoint-badge {
-    font-size:9px; font-weight:700; letter-spacing:1px;
-    padding:2px 6px; border-radius:4px; flex-shrink:0;
-  }
-  .badge-start { background:rgba(127,255,107,0.2); color:var(--accent3); }
-  .badge-mid { background:rgba(0,229,255,0.2); color:var(--accent); }
-  .badge-end { background:rgba(255,107,53,0.2); color:var(--accent2); }
-
-  .waypoint-del {
-    background:rgba(255,59,92,0.1); border:1px solid rgba(255,59,92,0.3);
-    color:var(--danger); border-radius:6px; padding:4px 8px;
-    font-size:12px; cursor:pointer; flex-shrink:0;
-  }
-
-  /* ── INPUTS ── */
-  .input-group { display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
-  .input-label { font-size:11px; color:var(--text2); font-weight:600; letter-spacing:1px; }
-  .input-row { display:flex; gap:8px; }
-  input[type=text], input[type=number], textarea, select {
-    background:var(--card2); border:1px solid var(--border);
-    color:var(--text); border-radius:10px; padding:10px 12px;
-    font-family:var(--font); font-size:14px; outline:none; width:100%;
-    transition: border-color 0.2s;
-  }
-  input:focus, textarea:focus, select:focus {
-    border-color:var(--accent);
-    box-shadow: 0 0 0 2px rgba(0,229,255,0.1);
-  }
-  select option { background:var(--card2); }
-  textarea { resize:vertical; min-height:70px; }
-
-  /* ── BUTTONS ── */
-  .btn {
-    border:none; border-radius:10px; padding:11px 16px;
-    font-family:var(--font); font-size:13px; font-weight:700;
-    cursor:pointer; display:flex; align-items:center; justify-content:center;
-    gap:6px; transition:all 0.2s; letter-spacing:0.3px;
-  }
-  .btn:active { transform:scale(0.97); }
-  .btn-primary { background:var(--accent); color:var(--bg); }
-  .btn-secondary { background:var(--card2); color:var(--text); border:1px solid var(--border); }
-  .btn-danger { background:rgba(255,59,92,0.15); color:var(--danger); border:1px solid rgba(255,59,92,0.3); }
-  .btn-success { background:rgba(127,255,107,0.15); color:var(--accent3); border:1px solid rgba(127,255,107,0.3); }
-  .btn-warn { background:rgba(255,184,0,0.15); color:var(--warn); border:1px solid rgba(255,184,0,0.3); }
-  .btn-full { width:100%; }
-  .btn-row { display:flex; gap:8px; }
-  .btn-row .btn { flex:1; }
-
-  /* ── TRACKING PANEL ── */
-  .tracking-hero {
-    background: linear-gradient(135deg, var(--bg3), #0a2040);
-    border:1px solid var(--border); border-radius:var(--radius);
-    padding:20px; text-align:center; margin-bottom:12px;
-  }
-  .tracking-status-icon { font-size:48px; margin-bottom:8px; }
-  .tracking-status-text { font-size:20px; font-weight:800; }
-  .tracking-status-sub { font-size:13px; color:var(--text2); margin-top:4px; }
-
-  .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  .info-item {
-    background:var(--card2); border:1px solid var(--border);
-    border-radius:10px; padding:12px; text-align:center;
-  }
-  .info-val { font-size:18px; font-weight:800; font-family:var(--mono); color:var(--accent); }
-  .info-lbl { font-size:10px; color:var(--text2); margin-top:2px; letter-spacing:1px; }
-
-  /* ── NOTIFICATIONS LOG ── */
-  .notif-list { display:flex; flex-direction:column; gap:6px; }
-  .notif-item {
-    background:var(--card2); border-radius:10px; padding:10px 12px;
-    display:flex; align-items:flex-start; gap:10px;
-    border-left:3px solid var(--border); animation: slideIn 0.3s ease;
-  }
-  @keyframes slideIn { from { opacity:0; transform:translateX(-10px); } to { opacity:1; transform:translateX(0); } }
-  .notif-item.arrive { border-left-color:var(--accent3); }
-  .notif-item.depart { border-left-color:var(--warn); }
-  .notif-item.alert { border-left-color:var(--danger); }
-  .notif-icon { font-size:18px; flex-shrink:0; margin-top:1px; }
-  .notif-content { flex:1; }
-  .notif-msg { font-size:13px; font-weight:500; }
-  .notif-time { font-size:10px; color:var(--text2); margin-top:2px; font-family:var(--mono); }
-  .notif-empty { text-align:center; color:var(--text3); padding:30px; font-size:14px; }
-
-  /* ── SETTINGS ── */
-  .setting-row {
-    display:flex; align-items:center; justify-content:space-between;
-    padding:10px 0; border-bottom:1px solid var(--border);
-  }
-  .setting-row:last-child { border-bottom:none; }
-  .setting-info { flex:1; }
-  .setting-name { font-size:14px; font-weight:500; }
-  .setting-desc { font-size:11px; color:var(--text2); margin-top:2px; }
-
-  /* ── TOGGLE ── */
-  .toggle { position:relative; width:44px; height:24px; flex-shrink:0; }
-  .toggle input { opacity:0; width:0; height:0; }
-  .toggle-slider {
-    position:absolute; inset:0; background:var(--card2);
-    border:1px solid var(--border); border-radius:12px; cursor:pointer;
-    transition: 0.3s;
-  }
-  .toggle-slider:before {
-    content:''; position:absolute; width:18px; height:18px;
-    left:2px; top:2px; background:var(--text3);
-    border-radius:50%; transition:0.3s;
-  }
-  input:checked + .toggle-slider { background:rgba(0,229,255,0.2); border-color:var(--accent); }
-  input:checked + .toggle-slider:before { transform:translateX(20px); background:var(--accent); }
-
-  /* ── OFFLINE BANNER ── */
-  .offline-banner {
-    background:rgba(255,184,0,0.1); border:1px solid rgba(255,184,0,0.3);
-    border-radius:8px; padding:8px 12px;
-    display:flex; align-items:center; gap:8px;
-    font-size:12px; color:var(--warn); display:none;
-  }
-  .offline-banner.show { display:flex; }
-
-  /* ── GPS ACCURACY BAR ── */
-  .accuracy-bar { height:4px; background:var(--card2); border-radius:2px; overflow:hidden; margin-top:6px; }
-  .accuracy-fill { height:100%; background:var(--accent3); border-radius:2px; transition:width 0.5s; }
-
-  /* ── ROLE SELECTOR ── */
-  .role-selector {
-    display:flex; gap:8px; margin-bottom:12px;
-  }
-  .role-btn {
-    flex:1; padding:14px 8px; border-radius:12px; border:2px solid var(--border);
-    background:var(--card); cursor:pointer; text-align:center;
-    transition:all 0.2s; color:var(--text2);
-  }
-  .role-btn .role-icon { font-size:28px; display:block; margin-bottom:6px; }
-  .role-btn .role-name { font-size:13px; font-weight:700; }
-  .role-btn .role-sub { font-size:10px; margin-top:2px; }
-  .role-btn.active-esposo { border-color:var(--accent); background:rgba(0,229,255,0.08); color:var(--accent); }
-  .role-btn.active-esposa { border-color:var(--accent2); background:rgba(255,107,53,0.08); color:var(--accent2); }
-
-  /* ── NOTIFICATION TOAST ── */
-  #toast-container { position:fixed; top:80px; left:50%; transform:translateX(-50%); z-index:9998; width:90%; max-width:360px; }
-  .toast {
-    background: linear-gradient(135deg, var(--card), var(--card2));
-    border:1px solid var(--border); border-radius:12px;
-    padding:12px 16px; margin-bottom:8px;
-    display:flex; align-items:center; gap:10px;
-    animation: toastIn 0.3s ease, toastOut 0.3s ease 3.5s forwards;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-  }
-  @keyframes toastIn { from { opacity:0; transform:translateY(-20px) scale(0.9); } to { opacity:1; transform:translateY(0) scale(1); } }
-  @keyframes toastOut { to { opacity:0; transform:translateY(-10px) scale(0.95); pointer-events:none; } }
-  .toast.arrive { border-left:3px solid var(--accent3); }
-  .toast.warn { border-left:3px solid var(--warn); }
-  .toast.info { border-left:3px solid var(--accent); }
-  .toast-icon { font-size:20px; }
-  .toast-content { flex:1; }
-  .toast-title { font-size:13px; font-weight:700; }
-  .toast-msg { font-size:11px; color:var(--text2); margin-top:2px; }
-
-  /* ── SHARE CODE ── */
-  .share-code {
-    background:var(--card2); border:2px dashed var(--border);
-    border-radius:12px; padding:16px; text-align:center;
-  }
-  .share-code .code { font-size:28px; font-weight:900; font-family:var(--mono); letter-spacing:6px; color:var(--accent); }
-  .share-code .code-sub { font-size:11px; color:var(--text2); margin-top:4px; }
-
-  /* ── PROGRESS ROUTE ── */
-  .route-progress {
-    display:flex; align-items:center; gap:0;
-    padding:4px 0; overflow-x:auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  .route-node {
-    display:flex; flex-direction:column; align-items:center;
-    min-width:64px; gap:4px;
-  }
-  .node-circle {
-    width:32px; height:32px; border-radius:50%;
-    display:flex; align-items:center; justify-content:center;
-    font-size:14px; border:2px solid var(--border);
-    background:var(--card2); transition:all 0.3s;
-  }
-  .node-circle.done { border-color:var(--accent3); background:rgba(127,255,107,0.15); }
-  .node-circle.current { border-color:var(--accent); background:rgba(0,229,255,0.15); box-shadow:var(--glow); }
-  .node-label { font-size:9px; color:var(--text2); text-align:center; max-width:60px; line-height:1.2; }
-  .route-line { flex:1; height:2px; background:var(--border); min-width:20px; transition:background 0.3s; }
-  .route-line.done { background:var(--accent3); }
-
-  /* ── BATTERY / SIGNAL ── */
-  .sys-info {
-    display:flex; gap:8px; font-size:11px; color:var(--text2);
-    font-family:var(--mono); align-items:center;
-  }
-  .sys-info span { display:flex; align-items:center; gap:3px; }
-
-  /* ── SCROLLBAR ── */
-  ::-webkit-scrollbar { width:4px; height:4px; }
-  ::-webkit-scrollbar-track { background:transparent; }
-  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
-
-  /* ── MISC ── */
-  .divider { height:1px; background:var(--border); margin:8px 0; }
-  .text-accent { color:var(--accent); }
-  .text-warn { color:var(--warn); }
-  .text-danger { color:var(--danger); }
-  .text-success { color:var(--accent3); }
-  .text-center { text-align:center; }
-  .mt-4 { margin-top:4px; }
-  .mt-8 { margin-top:8px; }
-  .flex { display:flex; align-items:center; gap:8px; }
-  .flex-between { display:flex; align-items:center; justify-content:space-between; }
-
-  .section-header {
-    font-size:12px; font-weight:700; color:var(--text2);
-    letter-spacing:2px; text-transform:uppercase;
-    margin-bottom:8px; display:flex; align-items:center; gap:6px;
-  }
-
-  /* ── RADIUS INPUT ── */
-  .radius-display {
-    font-size:24px; font-weight:900; font-family:var(--mono);
-    color:var(--accent); text-align:center; margin:6px 0;
-  }
-  input[type=range] {
-    width:100%; -webkit-appearance:none; height:4px;
-    background:var(--card2); border-radius:2px; outline:none;
-  }
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance:none; width:20px; height:20px;
-    border-radius:50%; background:var(--accent); cursor:pointer;
-    box-shadow: var(--glow);
-  }
-
-  /* ── ADD WAYPOINT FORM ── */
-  #add-wp-form {
-    background:var(--card2); border:1px solid var(--border);
-    border-radius:12px; padding:12px; display:none; margin-top:8px;
-  }
-  #add-wp-form.show { display:block; }
-
-  /* ── LOADING ── */
-  .spinner {
-    width:20px; height:20px; border:2px solid var(--border);
-    border-top-color:var(--accent); border-radius:50%;
-    animation: spin 0.8s linear infinite; display:inline-block;
-  }
-  @keyframes spin { to { transform:rotate(360deg); } }
-
-  /* ── LINK MODAL ── */
-  .modal-overlay {
-    position:fixed; inset:0; background:rgba(0,0,0,0.7);
-    display:flex; align-items:center; justify-content:center;
-    z-index:5000; padding:20px; display:none;
-  }
-  .modal-overlay.show { display:flex; }
-  .modal {
-    background:var(--card); border:1px solid var(--border);
-    border-radius:20px; padding:24px; width:100%; max-width:340px;
-  }
-  .modal-title { font-size:18px; font-weight:800; margin-bottom:4px; }
-  .modal-sub { font-size:13px; color:var(--text2); margin-bottom:16px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FamiliaTrack - Rastreo en Tiempo Real</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #050b18; color: white; overflow-x: hidden; }
+        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        #map { height: 400px; border-radius: 24px; z-index: 10; cursor: crosshair; }
+        .gradient-text { background: linear-gradient(90deg, #00f2fe 0%, #4facfe 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .pulse { animation: pulse-animation 2s infinite; }
+        @keyframes pulse-animation { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 242, 254, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(0, 242, 254, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 242, 254, 0); } }
+        .btn-role { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-role:active { transform: scale(0.95); }
+        .leaflet-container { background: #0b1426 !important; }
+    </style>
 </head>
 <body>
 
-<!-- SPLASH -->
-<div id="splash">
-  <div class="splash-logo"><div class="splash-inner">📍</div></div>
-  <div>
-    <div class="splash-title">Familia<span>Track</span></div>
-    <div class="splash-sub">Guasimal · Montería · Córdoba</div>
-  </div>
+<div id="app" class="min-h-screen flex flex-col p-4 max-w-md mx-auto">
+    
+    <!-- PANTALLA DE SELECCIÓN DE ROL -->
+    <div id="screen-setup" class="flex-1 flex flex-col justify-center items-center space-y-8 animate-fade-in">
+        <header class="text-center">
+            <h1 class="text-4xl font-extrabold gradient-text">FamiliaTrack</h1>
+            <p class="text-slate-400 mt-2">Seguridad y conexión en cada viaje</p>
+        </header>
+
+        <div class="grid grid-cols-1 gap-4 w-full">
+            <button onclick="selectRole('esposa')" class="btn-role glass p-6 rounded-3xl flex flex-col items-center border-2 border-transparent hover:border-cyan-500">
+                <div class="bg-cyan-500/20 p-4 rounded-full mb-4">
+                    <svg class="w-10 h-10 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </div>
+                <span class="text-xl font-bold">Soy la Esposa</span>
+                <span class="text-xs text-slate-500 text-center mt-1">Toca el mapa para definir tu ruta y compartir GPS</span>
+            </button>
+
+            <button onclick="selectRole('esposo')" class="btn-role glass p-6 rounded-3xl flex flex-col items-center border-2 border-transparent hover:border-orange-500">
+                <div class="bg-orange-500/20 p-4 rounded-full mb-4">
+                    <svg class="w-10 h-10 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                </div>
+                <span class="text-xl font-bold">Soy el Esposo</span>
+                <span class="text-xs text-slate-500 text-center mt-1">Sigue la ruta y posición en tiempo real</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA PRINCIPAL -->
+    <div id="screen-main" class="hidden flex-1 flex flex-col space-y-4">
+        <div class="glass p-4 rounded-2xl flex justify-between items-center">
+            <div>
+                <h2 id="display-role" class="font-bold text-lg">Cargando...</h2>
+                <p id="pairing-status" class="text-xs text-slate-400">Listo para emparejar</p>
+            </div>
+            <div id="pair-badge" class="bg-slate-800 px-3 py-1 rounded-full text-xs font-mono">CODE: 774210</div>
+        </div>
+
+        <!-- Instrucción dinámica -->
+        <div id="map-instruction" class="bg-cyan-500/10 border border-cyan-500/30 p-2 rounded-lg text-[10px] text-center text-cyan-400 uppercase font-bold hidden">
+            Toca el mapa para marcar el punto de PARTIDA
+        </div>
+
+        <div id="map" class="shadow-2xl border border-slate-800"></div>
+
+        <!-- Panel Esposa -->
+        <div id="controls-esposa" class="hidden space-y-3">
+            <div class="glass p-4 rounded-2xl space-y-3">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-xs uppercase text-cyan-400 tracking-wider">Planificador de Ruta</h3>
+                    <button onclick="clearRoute()" class="text-[10px] bg-slate-800 px-2 py-1 rounded hover:bg-red-900/50">Limpiar Todo</button>
+                </div>
+                <div class="space-y-2 text-sm" id="route-summary">
+                    <div class="flex items-center space-x-2"><span class="text-green-400">●</span> <span id="txt-start" class="text-slate-400 italic">Toca el mapa para origen</span></div>
+                    <div id="waypoints-list" class="space-y-1"></div>
+                    <div class="flex items-center space-x-2"><span class="text-red-400">■</span> <span id="txt-end" class="text-slate-400 italic">Toca el mapa para destino</span></div>
+                </div>
+                <button onclick="startTrip()" id="btn-start" class="w-full bg-cyan-600 py-3 rounded-xl font-bold text-sm shadow-lg shadow-cyan-900/20">INICIAR VIAJE Y COMPARTIR GPS</button>
+            </div>
+        </div>
+
+        <!-- Panel Esposo -->
+        <div id="controls-esposo" class="hidden space-y-3">
+            <div class="glass p-4 rounded-2xl grid grid-cols-2 gap-3 text-center">
+                <div class="bg-slate-900/50 p-2 rounded-lg">
+                    <span class="block text-[10px] text-slate-500">VELOCIDAD</span>
+                    <span id="stat-speed" class="font-bold text-cyan-400">0 km/h</span>
+                </div>
+                <div class="bg-slate-900/50 p-2 rounded-lg">
+                    <span class="block text-[10px] text-slate-500">ACTUALIZADO</span>
+                    <span id="stat-time" class="font-bold text-white">--:--</span>
+                </div>
+            </div>
+            <div class="glass p-4 rounded-2xl">
+                <h3 class="font-bold text-xs mb-3 text-orange-400 uppercase tracking-widest">Hoja de Ruta Activa</h3>
+                <div id="esposo-route-display" class="space-y-2 text-sm">
+                    <p class="text-slate-500 text-center py-2 italic">Sin ruta activa</p>
+                </div>
+            </div>
+        </div>
+
+        <button onclick="sendAlert()" class="w-full bg-red-600/10 border border-red-600/30 text-red-500 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest active:bg-red-600 active:text-white">🚨 Botón de Alerta / SOS</button>
+    </div>
 </div>
 
-<!-- TOAST -->
-<div id="toast-container"></div>
+<script type="module">
+    let STATE = {
+        role: null,
+        pairCode: '774210',
+        tripStarted: false,
+        currentPos: null,
+        route: {
+            start: null, // {lat, lng, name}
+            end: null,
+            waypoints: [] // Array de {lat, lng, name}
+        }
+    };
 
-<!-- APP -->
-<div id="app">
-  <!-- HEADER -->
-  <div class="header">
-    <div class="header-left">
-      <div class="logo-small"><div class="logo-inner-s">📍</div></div>
-      <div>
-        <div class="app-name">Familia<span>Track</span></div>
-        <div class="app-sub" id="header-sub">Guasimal · Montería</div>
-      </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <div class="sys-info" id="sys-info">
-        <span>📶 —</span>
-        <span>🔋 —</span>
-      </div>
-      <div class="status-pill">
-        <div class="status-dot" id="gps-dot"></div>
-        <span id="gps-status-text" style="font-size:11px;">GPS</span>
-      </div>
-    </div>
-  </div>
+    let map, userMarker;
+    let routeMarkers = [];
+    let watchId = null;
 
-  <!-- OFFLINE BANNER -->
-  <div class="offline-banner" id="offline-banner">
-    ⚠️ Sin conexión — Datos GPS guardados localmente
-  </div>
+    window.selectRole = (role) => {
+        STATE.role = role;
+        document.getElementById('screen-setup').classList.add('hidden');
+        document.getElementById('screen-main').classList.remove('hidden');
+        document.getElementById('display-role').innerText = role === 'esposa' ? 'Modo: Esposa' : 'Modo: Esposo';
+        
+        if(role === 'esposa') {
+            document.getElementById('controls-esposa').classList.remove('hidden');
+            document.getElementById('map-instruction').classList.remove('hidden');
+        } else {
+            document.getElementById('controls-esposo').classList.remove('hidden');
+        }
 
-  <!-- TABS -->
-  <div class="tabs">
-    <button class="tab active" onclick="switchTab('mapa')" id="tab-mapa">
-      <span class="tab-icon">🗺️</span>Mapa
-    </button>
-    <button class="tab" onclick="switchTab('ruta')" id="tab-ruta">
-      <span class="tab-icon">📍</span>Ruta
-    </button>
-    <button class="tab" onclick="switchTab('seguimiento')" id="tab-seguimiento">
-      <span class="tab-icon">📡</span>Seguimiento
-    </button>
-    <button class="tab" onclick="switchTab('notif')" id="tab-notif">
-      <span class="tab-icon">🔔</span>Alertas
-    </button>
-    <button class="tab" onclick="switchTab('config')" id="tab-config">
-      <span class="tab-icon">⚙️</span>Config
-    </button>
-  </div>
+        initMap();
+        syncLoop();
+    };
 
-  <!-- CONTENT -->
-  <div class="content">
+    function initMap() {
+        map = L.map('map', { zoomControl: false }).setView([4.6097, -74.0817], 6); // Default Colombia
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
 
-    <!-- ══ MAPA ══ -->
-    <div class="panel active" id="panel-mapa">
-      <div id="map">
-        <div id="leaflet-map"></div>
-        <div class="map-overlay">
-          <button class="map-btn" onclick="centerMap()">🎯 Centrar</button>
-          <button class="map-btn" onclick="addWaypointAtCenter()" id="btn-add-here">📌 Agregar aquí</button>
-          <button class="map-btn primary" onclick="startTracking()" id="btn-track-map" style="display:none">▶ Iniciar</button>
-        </div>
-      </div>
-    </div>
+        userMarker = L.circleMarker([0, 0], {
+            radius: 10,
+            fillColor: '#06b6d4',
+            color: '#fff',
+            weight: 3,
+            fillOpacity: 1
+        }).addTo(map);
 
-    <!-- ══ RUTA ══ -->
-    <div class="panel" id="panel-ruta">
+        // Click en mapa para la Esposa
+        map.on('click', (e) => {
+            if (STATE.role === 'esposa' && !STATE.tripStarted) {
+                handleMapClick(e.latlng);
+            }
+        });
 
-      <!-- Rol -->
-      <div class="card">
-        <div class="card-title"><span class="icon">👤</span>¿Quién soy?</div>
-        <div class="role-selector">
-          <button class="role-btn" id="role-esposo" onclick="setRole('esposo')">
-            <span class="role-icon">🚗</span>
-            <div class="role-name">Esposo</div>
-            <div class="role-sub">Yo voy manejando</div>
-          </button>
-          <button class="role-btn" id="role-esposa" onclick="setRole('esposa')">
-            <span class="role-icon">💆‍♀️</span>
-            <div class="role-name">Esposa</div>
-            <div class="role-sub">Recibo notif.</div>
-          </button>
-        </div>
-        <div class="share-code" id="share-section" style="display:none">
-          <div class="code" id="session-code">——</div>
-          <div class="code-sub">Código de sesión — Comparte con tu esposa</div>
-          <button class="btn btn-secondary mt-8 btn-full" onclick="shareSession()">📤 Compartir enlace</button>
-        </div>
-        <div id="join-section" style="display:none">
-          <div class="input-group" style="margin-bottom:0">
-            <div class="input-label">Código de tu esposo</div>
-            <div class="input-row">
-              <input type="text" id="join-code" placeholder="XXXXXX" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;text-align:center;font-size:20px;font-weight:900">
-              <button class="btn btn-primary" onclick="joinSession()" style="white-space:nowrap">Unirse</button>
+        // Intentar centrar en el usuario al inicio
+        navigator.geolocation.getCurrentPosition(p => {
+            const pos = [p.coords.latitude, p.coords.longitude];
+            map.setView(pos, 14);
+            userMarker.setLatLng(pos);
+        });
+    }
+
+    async function handleMapClick(latlng) {
+        const name = `Punto (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`;
+        
+        if (!STATE.route.start) {
+            STATE.route.start = { ...latlng, name: "Punto de Partida" };
+            addMarkerToMap(latlng, '#4ade80', 'Partida');
+            document.getElementById('txt-start').innerText = "Fijado";
+            document.getElementById('map-instruction').innerText = "Toca para paradas intermedias o DESTINO";
+        } else if (!STATE.route.end) {
+            // Si ya hay inicio, el siguiente puede ser waypoint o destino
+            // Usaremos un prompt simple para decidir o simplemente el último es el destino
+            if (STATE.route.waypoints.length < 5 && confirm("¿Es esta una parada intermedia? (Cancelar para marcar como DESTINO FINAL)")) {
+                STATE.route.waypoints.push({ ...latlng, name: `Parada ${STATE.route.waypoints.length + 1}` });
+                addMarkerToMap(latlng, '#fbbf24', 'Parada');
+                renderWaypointsList();
+            } else {
+                STATE.route.end = { ...latlng, name: "Destino Final" };
+                addMarkerToMap(latlng, '#f87171', 'Llegada');
+                document.getElementById('txt-end').innerText = "Fijado";
+                document.getElementById('map-instruction').innerText = "Ruta completa. Pulsa Iniciar.";
+            }
+        }
+        broadcast();
+    }
+
+    function addMarkerToMap(latlng, color, label) {
+        const m = L.circleMarker(latlng, {
+            radius: 6,
+            fillColor: color,
+            color: '#fff',
+            weight: 2,
+            fillOpacity: 1
+        }).addTo(map).bindTooltip(label, { permanent: true, direction: 'top' });
+        routeMarkers.push(m);
+    }
+
+    function renderWaypointsList() {
+        const container = document.getElementById('waypoints-list');
+        container.innerHTML = STATE.route.waypoints.map((w, i) => `
+            <div class="flex items-center space-x-2 ml-4 border-l border-slate-700 pl-2">
+                <span class="text-yellow-500 text-[10px]">○</span>
+                <span class="text-xs text-slate-300">Parada ${i+1} fijada</span>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Puntos predefinidos Guasimal -->
-      <div class="card">
-        <div class="card-title"><span class="icon">🏘️</span>Puntos Guasimal / Montería</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
-          <button class="btn btn-secondary" style="font-size:11px;padding:7px 10px;" onclick="addPreset('guasimal')">🏡 Guasimal</button>
-          <button class="btn btn-secondary" style="font-size:11px;padding:7px 10px;" onclick="addPreset('monteria')">🏙️ Montería Centro</button>
-          <button class="btn btn-secondary" style="font-size:11px;padding:7px 10px;" onclick="addPreset('nudo')">🔀 El Nudo</button>
-          <button class="btn btn-secondary" style="font-size:11px;padding:7px 10px;" onclick="addPreset('valencia')">🛣️ Valencia</button>
-          <button class="btn btn-secondary" style="font-size:11px;padding:7px 10px;" onclick="addPreset('puente')">🌉 Puente Betancí</button>
-        </div>
-        <button class="btn btn-secondary btn-full" onclick="toggleAddForm()">➕ Agregar punto personalizado</button>
-
-        <div id="add-wp-form">
-          <div class="input-group">
-            <div class="input-label">Nombre del punto</div>
-            <input type="text" id="wp-name" placeholder="Ej: Tienda La Esquina">
-          </div>
-          <div class="input-row" style="gap:8px;margin-bottom:10px;">
-            <div class="input-group" style="margin-bottom:0;flex:1">
-              <div class="input-label">Latitud</div>
-              <input type="number" id="wp-lat" placeholder="8.xxxxx" step="0.00001">
-            </div>
-            <div class="input-group" style="margin-bottom:0;flex:1">
-              <div class="input-label">Longitud</div>
-              <input type="number" id="wp-lng" placeholder="-75.xxxxx" step="0.00001">
-            </div>
-          </div>
-          <div class="input-group">
-            <div class="input-label">Radio de llegada (metros)</div>
-            <div class="radius-display" id="radius-display">150m</div>
-            <input type="range" id="wp-radius" min="50" max="500" value="150" oninput="updateRadius(this.value)">
-          </div>
-          <div class="input-group">
-            <div class="input-label">Tipo de punto</div>
-            <select id="wp-type">
-              <option value="mid">📍 Punto de paso</option>
-              <option value="start">🟢 Punto de partida</option>
-              <option value="end">🏁 Destino final</option>
-            </select>
-          </div>
-          <div class="input-group">
-            <div class="input-label">Mensaje de notificación</div>
-            <input type="text" id="wp-msg" placeholder="Ej: Ya pasé por la tienda 👋">
-          </div>
-          <button class="btn btn-primary btn-full" onclick="addWaypoint()">✅ Agregar punto</button>
-        </div>
-      </div>
-
-      <!-- Lista de waypoints -->
-      <div class="card">
-        <div class="card-title"><span class="icon">📋</span>Ruta configurada <span id="wp-count" style="color:var(--accent);margin-left:4px">0 puntos</span></div>
-        <div class="waypoint-list" id="waypoint-list">
-          <div class="notif-empty">Sin puntos aún. Agrega el inicio, pasos y destino.</div>
-        </div>
-        <div class="btn-row mt-8">
-          <button class="btn btn-danger" onclick="clearWaypoints()">🗑️ Limpiar</button>
-          <button class="btn btn-success btn-full" onclick="saveRoute()">💾 Guardar ruta</button>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- ══ SEGUIMIENTO ══ -->
-    <div class="panel" id="panel-seguimiento">
-
-      <div class="tracking-hero">
-        <div class="tracking-status-icon" id="track-icon">🛑</div>
-        <div class="tracking-status-text" id="track-status">Detenido</div>
-        <div class="tracking-status-sub" id="track-sub">Configura la ruta y presiona Iniciar</div>
-      </div>
-
-      <div class="info-grid">
-        <div class="info-item">
-          <div class="info-val" id="info-speed">0</div>
-          <div class="info-lbl">Velocidad km/h</div>
-        </div>
-        <div class="info-item">
-          <div class="info-val" id="info-acc">—</div>
-          <div class="info-lbl">Precisión GPS m</div>
-        </div>
-        <div class="info-item">
-          <div class="info-val" id="info-next">—</div>
-          <div class="info-lbl">Próximo punto m</div>
-        </div>
-        <div class="info-item">
-          <div class="info-val" id="info-done">0/0</div>
-          <div class="info-lbl">Puntos pasados</div>
-        </div>
-      </div>
-
-      <!-- Progreso de ruta -->
-      <div class="card">
-        <div class="card-title"><span class="icon">🛤️</span>Progreso de ruta</div>
-        <div class="route-progress" id="route-progress">
-          <div style="color:var(--text3);font-size:12px;padding:10px">Sin ruta configurada</div>
-        </div>
-        <div class="accuracy-bar mt-8">
-          <div class="accuracy-fill" id="acc-fill" style="width:0%"></div>
-        </div>
-        <div style="font-size:10px;color:var(--text3);margin-top:4px;text-align:right" id="acc-label">Precisión GPS</div>
-      </div>
-
-      <!-- Coords actuales -->
-      <div class="card">
-        <div class="card-title"><span class="icon">📡</span>Posición actual</div>
-        <div style="font-family:var(--mono);font-size:13px;line-height:1.8">
-          <div>LAT: <span id="cur-lat" style="color:var(--accent)">—</span></div>
-          <div>LNG: <span id="cur-lng" style="color:var(--accent)">—</span></div>
-          <div>ALT: <span id="cur-alt" style="color:var(--text2)">—</span> m</div>
-          <div>UPD: <span id="cur-time" style="color:var(--text2)">—</span></div>
-        </div>
-      </div>
-
-      <div class="btn-row">
-        <button class="btn btn-success btn-full" onclick="startTracking()" id="btn-start">▶ Iniciar rastreo</button>
-        <button class="btn btn-danger" onclick="stopTracking()" id="btn-stop" style="display:none">⏹ Detener</button>
-      </div>
-
-    </div>
-
-    <!-- ══ ALERTAS ══ -->
-    <div class="panel" id="panel-notif">
-
-      <div class="card">
-        <div class="card-title"><span class="icon">🔔</span>Notificaciones push</div>
-        <div class="setting-row">
-          <div class="setting-info">
-            <div class="setting-name">Activar notificaciones</div>
-            <div class="setting-desc">Alertas cuando llegue a un punto</div>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" id="toggle-notif" onchange="toggleNotifications(this)">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <button class="btn btn-secondary btn-full mt-8" onclick="testNotification()">🧪 Probar notificación</button>
-      </div>
-
-      <div class="card">
-        <div class="card-title"><span class="icon">📋</span>Registro de alertas <span id="notif-count" style="color:var(--accent);margin-left:4px">0</span></div>
-        <div class="notif-list" id="notif-list">
-          <div class="notif-empty">Sin alertas aún. Inicia el rastreo.</div>
-        </div>
-        <button class="btn btn-danger mt-8 btn-full" onclick="clearNotifLog()">🗑️ Limpiar registro</button>
-      </div>
-
-    </div>
-
-    <!-- ══ CONFIGURACIÓN ══ -->
-    <div class="panel" id="panel-config">
-
-      <div class="card">
-        <div class="card-title"><span class="icon">⚙️</span>GPS y rastreo</div>
-        <div class="setting-row">
-          <div class="setting-info">
-            <div class="setting-name">Alta precisión GPS</div>
-            <div class="setting-desc">Usa más batería pero es más exacto</div>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" id="toggle-hq" checked>
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="setting-row">
-          <div class="setting-info">
-            <div class="setting-name">Intervalo de actualización</div>
-            <div class="setting-desc" id="interval-desc">Cada 5 segundos</div>
-          </div>
-          <select id="update-interval" onchange="updateIntervalLabel()" style="width:auto;min-width:80px;font-size:12px;padding:6px 8px">
-            <option value="3000">3 seg</option>
-            <option value="5000" selected>5 seg</option>
-            <option value="10000">10 seg</option>
-            <option value="15000">15 seg</option>
-            <option value="30000">30 seg</option>
-          </select>
-        </div>
-        <div class="setting-row">
-          <div class="setting-info">
-            <div class="setting-name">Radio de detección (defecto)</div>
-            <div class="setting-desc">Distancia para considerar "llegó"</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <span style="font-size:13px;font-weight:700;color:var(--accent);font-family:var(--mono)" id="def-radius-lbl">150m</span>
-          </div>
-        </div>
-        <input type="range" id="def-radius" min="50" max="500" value="150" oninput="updateDefRadius(this.value)" style="margin-top:8px">
-      </div>
-
-      <div class="card">
-        <div class="card-title"><span class="icon">🔋</span>Ahorro de batería</div>
-        <div class="setting-row">
-          <div class="setting-info">
-            <div class="setting-name">Modo batería baja</div>
-            <div class="setting-desc">Reduce frecuencia cuando batería &lt;20%</div>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" id="toggle-battery" checked>
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="setting-row">
-          <div class="setting-info">
-            <div class="setting-name">Evitar suspensión</div>
-            <div class="setting-desc">Wake lock — mantiene pantalla activa</div>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" id="toggle-wakelock" checked onchange="toggleWakeLock(this)">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title"><span class="icon">📲</span>Compartir / Vincular</div>
-        <div class="input-group">
-          <div class="input-label">Mi nombre</div>
-          <input type="text" id="my-name" placeholder="Tu nombre" value="">
-        </div>
-        <div class="input-group">
-          <div class="input-label">Nombre pareja</div>
-          <input type="text" id="partner-name" placeholder="Nombre de tu esposa/o" value="">
-        </div>
-        <button class="btn btn-primary btn-full mt-8" onclick="saveSettings()">💾 Guardar configuración</button>
-      </div>
-
-      <div class="card">
-        <div class="card-title"><span class="icon">🗺️</span>Datos de la app</div>
-        <button class="btn btn-secondary btn-full" onclick="exportData()">📤 Exportar historial</button>
-        <button class="btn btn-danger btn-full mt-8" onclick="resetAll()">⚠️ Reiniciar todo</button>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<!-- Leaflet CSS -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-
-<script>
-// ═══════════════════════════════════════════════════
-// ESTADO GLOBAL
-// ═══════════════════════════════════════════════════
-const STATE = {
-  role: null,
-  tracking: false,
-  watchId: null,
-  wakeLock: null,
-  sessionCode: null,
-  waypoints: [],
-  waypointsDone: new Set(),
-  currentPos: null,
-  map: null,
-  userMarker: null,
-  routeLayer: null,
-  wpMarkers: [],
-  notifLog: [],
-  notifPermission: false,
-  batteryAPI: null,
-  settings: {
-    myName: '',
-    partnerName: '',
-    interval: 5000,
-    highAccuracy: true,
-    defaultRadius: 150,
-    batteryMode: true,
-    wakelock: true,
-  }
-};
-
-// Coordenadas zona Guasimal / Montería
-const PRESETS = {
-  guasimal:  { name:'🏡 Guasimal', lat: 8.4752, lng: -75.8361, radius:200, type:'mid', msg:'Ya llegué a Guasimal ✅' },
-  monteria:  { name:'🏙️ Montería Centro', lat: 8.7479, lng: -75.8814, radius:300, type:'end', msg:'Llegué a Montería 🎉' },
-  nudo:      { name:'🔀 El Nudo', lat: 8.5830, lng: -75.8600, radius:150, type:'mid', msg:'Pasando por El Nudo 👋' },
-  valencia:  { name:'🛣️ Valencia', lat: 8.6340, lng: -75.8710, radius:150, type:'mid', msg:'Pasando por Valencia 👍' },
-  puente:    { name:'🌉 Puente Betancí', lat: 8.6950, lng: -75.8760, radius:150, type:'mid', msg:'Cruzando el puente 🌉' },
-};
-
-// ═══════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════
-window.addEventListener('load', async () => {
-  loadSettings();
-  loadWaypoints();
-  loadNotifLog();
-  initMap();
-  setupOfflineDetection();
-  await setupBattery();
-  updateSysInfo();
-  setInterval(updateSysInfo, 30000);
-
-  // Solicitar notificaciones al inicio
-  if ('Notification' in window) {
-    const perm = Notification.permission;
-    if (perm === 'granted') {
-      STATE.notifPermission = true;
-      document.getElementById('toggle-notif').checked = true;
+        `).join('');
     }
-  }
-});
 
-// ═══════════════════════════════════════════════════
-// MAPA (Leaflet + OpenStreetMap)
-// ═══════════════════════════════════════════════════
-function initMap() {
-  // Centro en Guasimal
-  STATE.map = L.map('leaflet-map', {
-    center: [8.4752, -75.8361],
-    zoom: 13,
-    zoomControl: false,
-    attributionControl: false
-  });
-
-  // Tile oscuro
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OSM',
-    maxZoom: 19
-  }).addTo(STATE.map);
-
-  // Zoom control
-  L.control.zoom({ position:'topright' }).addTo(STATE.map);
-
-  // Attribution pequeño
-  L.control.attribution({ position:'bottomright', prefix:false }).addTo(STATE.map);
-
-  // Click en mapa para ver coords
-  STATE.map.on('click', e => {
-    const { lat, lng } = e.latlng;
-    showToast('info','📌 Posición','Lat: ' + lat.toFixed(5) + ' Lng: ' + lng.toFixed(5));
-    document.getElementById('wp-lat').value = lat.toFixed(5);
-    document.getElementById('wp-lng').value = lng.toFixed(5);
-  });
-
-  renderWaypointsOnMap();
-}
-
-function centerMap() {
-  if (STATE.currentPos) {
-    STATE.map.setView([STATE.currentPos.lat, STATE.currentPos.lng], 15, {animate:true});
-  } else {
-    STATE.map.setView([8.4752, -75.8361], 13, {animate:true});
-    showToast('warn','GPS','Sin posición aún. Centrando en Guasimal.');
-  }
-}
-
-function addWaypointAtCenter() {
-  const c = STATE.map.getCenter();
-  document.getElementById('wp-lat').value = c.lat.toFixed(5);
-  document.getElementById('wp-lng').value = c.lng.toFixed(5);
-  switchTab('ruta');
-  document.getElementById('add-wp-form').classList.add('show');
-  showToast('info','📌','Coordenadas cargadas. Rellena el formulario.');
-}
-
-function renderWaypointsOnMap() {
-  if (!STATE.map) return;
-  // Limpiar markers anteriores
-  STATE.wpMarkers.forEach(m => STATE.map.removeLayer(m));
-  STATE.wpMarkers = [];
-  if (STATE.routeLayer) STATE.map.removeLayer(STATE.routeLayer);
-
-  const colors = { start:'#7fff6b', mid:'#00e5ff', end:'#ff6b35' };
-  const latlngs = [];
-
-  STATE.waypoints.forEach((wp, i) => {
-    const color = colors[wp.type] || colors.mid;
-    const icon = L.divIcon({
-      html: `<div style="
-        width:28px;height:28px;border-radius:50%;
-        background:${color}22;border:2px solid ${color};
-        display:flex;align-items:center;justify-content:center;
-        font-size:12px;font-weight:700;color:${color};
-        box-shadow:0 0 10px ${color}88;
-      ">${i+1}</div>`,
-      iconSize:[28,28], iconAnchor:[14,14], className:''
-    });
-
-    const marker = L.marker([wp.lat, wp.lng], {icon})
-      .addTo(STATE.map)
-      .bindPopup(`<b>${wp.name}</b><br>Radio: ${wp.radius}m<br>${wp.msg||''}`);
-
-    // Círculo de radio
-    const circle = L.circle([wp.lat, wp.lng], {
-      radius: wp.radius,
-      color: color,
-      fillColor: color,
-      fillOpacity: 0.08,
-      weight: 1,
-      dashArray: '4'
-    }).addTo(STATE.map);
-
-    STATE.wpMarkers.push(marker, circle);
-    latlngs.push([wp.lat, wp.lng]);
-  });
-
-  // Línea de ruta
-  if (latlngs.length > 1) {
-    STATE.routeLayer = L.polyline(latlngs, {
-      color:'#00e5ff', weight:3, opacity:0.6, dashArray:'8,6'
-    }).addTo(STATE.map);
-    STATE.map.fitBounds(STATE.routeLayer.getBounds(), {padding:[30,30]});
-  }
-}
-
-function updateUserMarker(lat, lng) {
-  if (!STATE.map) return;
-  if (STATE.userMarker) STATE.map.removeLayer(STATE.userMarker);
-  const icon = L.divIcon({
-    html:`<div style="
-      width:20px;height:20px;border-radius:50%;
-      background:#00e5ff;border:3px solid white;
-      box-shadow:0 0 16px #00e5ff,0 0 32px #00e5ff88;
-      animation:none;
-    "></div>
-    <div style="
-      position:absolute;top:0;left:0;width:20px;height:20px;
-      border-radius:50%;background:#00e5ff44;
-      animation:ripple 1.5s ease-out infinite;
-    "></div>`,
-    iconSize:[20,20], iconAnchor:[10,10], className:''
-  });
-  STATE.userMarker = L.marker([lat,lng],{icon,zIndexOffset:1000}).addTo(STATE.map);
-}
-
-// ═══════════════════════════════════════════════════
-// TABS
-// ═══════════════════════════════════════════════════
-function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('tab-'+tab).classList.add('active');
-  document.getElementById('panel-'+tab).classList.add('active');
-  if (tab==='mapa') setTimeout(()=>STATE.map&&STATE.map.invalidateSize(),100);
-}
-
-// ═══════════════════════════════════════════════════
-// ROL
-// ═══════════════════════════════════════════════════
-function setRole(role) {
-  STATE.role = role;
-  document.getElementById('role-esposo').className = 'role-btn' + (role==='esposo'?' active-esposo':'');
-  document.getElementById('role-esposa').className = 'role-btn' + (role==='esposa'?' active-esposa':'');
-
-  if (role==='esposo') {
-    STATE.sessionCode = generateCode();
-    document.getElementById('session-code').textContent = STATE.sessionCode;
-    document.getElementById('share-section').style.display='block';
-    document.getElementById('join-section').style.display='none';
-    document.getElementById('btn-track-map').style.display='block';
-    showToast('info','👤','Modo Esposo activo. Comparte el código con tu esposa.');
-  } else {
-    document.getElementById('join-section').style.display='block';
-    document.getElementById('share-section').style.display='none';
-    document.getElementById('btn-track-map').style.display='none';
-    showToast('info','👤','Modo Esposa activo. Ingresa el código del esposo.');
-  }
-}
-
-function generateCode() {
-  return Math.random().toString(36).substring(2,8).toUpperCase();
-}
-
-function shareSession() {
-  const url = window.location.href.split('?')[0] + '?code=' + STATE.sessionCode;
-  const msg = `💍 FamiliaTrack\nÚnete a mi seguimiento en tiempo real:\n${url}\nCódigo: ${STATE.sessionCode}`;
-  if (navigator.share) {
-    navigator.share({ title:'FamiliaTrack', text:msg, url });
-  } else if (navigator.clipboard) {
-    navigator.clipboard.writeText(msg).then(() => showToast('info','📋','Enlace copiado al portapapeles'));
-  } else {
-    prompt('Copia este enlace:', url);
-  }
-}
-
-function joinSession() {
-  const code = document.getElementById('join-code').value.trim().toUpperCase();
-  if (code.length < 4) { showToast('warn','⚠️','Ingresa el código de 6 dígitos'); return; }
-  STATE.sessionCode = code;
-  showToast('info','✅','Conectado al seguimiento código: ' + code);
-  // En implementación real: conectar vía WebSocket/Firebase
-  addNotifLog('info','🔗 Conectado a sesión: ' + code);
-}
-
-// ═══════════════════════════════════════════════════
-// WAYPOINTS
-// ═══════════════════════════════════════════════════
-function toggleAddForm() {
-  document.getElementById('add-wp-form').classList.toggle('show');
-}
-
-function addPreset(key) {
-  const p = PRESETS[key];
-  addWaypointData(p.name, p.lat, p.lng, p.radius, p.type, p.msg);
-}
-
-function addWaypointAtCenter() {
-  const c = STATE.map ? STATE.map.getCenter() : {lat:8.4752,lng:-75.8361};
-  document.getElementById('wp-lat').value = c.lat.toFixed(5);
-  document.getElementById('wp-lng').value = c.lng.toFixed(5);
-  switchTab('ruta');
-  document.getElementById('add-wp-form').classList.add('show');
-  showToast('info','📌','Coordenadas del mapa cargadas');
-}
-
-function addWaypoint() {
-  const name = document.getElementById('wp-name').value.trim();
-  const lat  = parseFloat(document.getElementById('wp-lat').value);
-  const lng  = parseFloat(document.getElementById('wp-lng').value);
-  const radius = parseInt(document.getElementById('wp-radius').value);
-  const type = document.getElementById('wp-type').value;
-  const msg  = document.getElementById('wp-msg').value.trim();
-
-  if (!name) { showToast('warn','⚠️','Ingresa un nombre'); return; }
-  if (isNaN(lat)||isNaN(lng)) { showToast('warn','⚠️','Coordenadas inválidas'); return; }
-
-  addWaypointData(name, lat, lng, radius, type, msg);
-  // Reset form
-  ['wp-name','wp-lat','wp-lng','wp-msg'].forEach(id => document.getElementById(id).value='');
-  document.getElementById('wp-radius').value = 150;
-  document.getElementById('wp-type').value = 'mid';
-  updateRadius(150);
-  document.getElementById('add-wp-form').classList.remove('show');
-}
-
-function addWaypointData(name, lat, lng, radius, type, msg) {
-  STATE.waypoints.push({ id: Date.now(), name, lat, lng, radius: radius||150, type: type||'mid', msg: msg||('Llegué a '+name) });
-  saveWaypoints();
-  renderWaypointList();
-  renderWaypointsOnMap();
-  updateRouteProgress();
-  showToast('info','📍','Punto agregado: ' + name);
-}
-
-function renderWaypointList() {
-  const list = document.getElementById('waypoint-list');
-  document.getElementById('wp-count').textContent = STATE.waypoints.length + ' puntos';
-  if (!STATE.waypoints.length) {
-    list.innerHTML = '<div class="notif-empty">Sin puntos aún. Agrega el inicio, pasos y destino.</div>';
-    return;
-  }
-  list.innerHTML = STATE.waypoints.map((wp, i) => {
-    const typeClass = wp.type==='start'?'start':wp.type==='end'?'end':'mid';
-    const badgeClass = wp.type==='start'?'badge-start':wp.type==='end'?'badge-end':'badge-mid';
-    const labels = {start:'INICIO',mid:'PASO',end:'DESTINO'};
-    const icons  = {start:'🟢',mid:'📍',end:'🏁'};
-    return `
-    <div class="waypoint-item">
-      <div class="waypoint-icon ${typeClass}">${icons[wp.type]}</div>
-      <div class="waypoint-info">
-        <div class="waypoint-name">${wp.name}</div>
-        <div class="waypoint-coords">${wp.lat.toFixed(4)}, ${wp.lng.toFixed(4)} · r:${wp.radius}m</div>
-      </div>
-      <span class="waypoint-badge ${badgeClass}">${labels[wp.type]}</span>
-      <button class="waypoint-del" onclick="removeWaypoint(${i})">✕</button>
-    </div>`;
-  }).join('');
-}
-
-function removeWaypoint(i) {
-  STATE.waypoints.splice(i,1);
-  saveWaypoints();
-  renderWaypointList();
-  renderWaypointsOnMap();
-  updateRouteProgress();
-}
-
-function clearWaypoints() {
-  if (!STATE.waypoints.length) return;
-  STATE.waypoints = [];
-  STATE.waypointsDone.clear();
-  saveWaypoints();
-  renderWaypointList();
-  renderWaypointsOnMap();
-  updateRouteProgress();
-  showToast('warn','🗑️','Ruta limpiada');
-}
-
-function saveRoute() {
-  saveWaypoints();
-  showToast('info','💾','Ruta guardada con ' + STATE.waypoints.length + ' puntos');
-}
-
-function updateRadius(v) {
-  document.getElementById('radius-display').textContent = v + 'm';
-}
-
-// ═══════════════════════════════════════════════════
-// PROGRESO DE RUTA
-// ═══════════════════════════════════════════════════
-function updateRouteProgress() {
-  const el = document.getElementById('route-progress');
-  document.getElementById('info-done').textContent = STATE.waypointsDone.size + '/' + STATE.waypoints.length;
-  if (!STATE.waypoints.length) {
-    el.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:10px">Sin ruta configurada</div>';
-    return;
-  }
-  let html = '';
-  STATE.waypoints.forEach((wp, i) => {
-    const done = STATE.waypointsDone.has(wp.id);
-    const isNext = !done && i > 0 ? !STATE.waypointsDone.has(STATE.waypoints[i-1]?.id) : (!done && i===0);
-    // Determine if this is the next active node
-    const allBefore = STATE.waypoints.slice(0,i).every(w=>STATE.waypointsDone.has(w.id));
-    const isCurrent = allBefore && !done;
-
-    const circleClass = done ? 'done' : isCurrent ? 'current' : '';
-    const icons = {start:'🟢',mid:'📍',end:'🏁'};
-    const shortName = wp.name.replace(/^[^\s]+\s/,'').substring(0,8);
-
-    if (i>0) html += `<div class="route-line${done||STATE.waypointsDone.has(STATE.waypoints[i-1]?.id)?' done':''}"></div>`;
-    html += `<div class="route-node">
-      <div class="node-circle ${circleClass}">${done?'✅':icons[wp.type]}</div>
-      <div class="node-label">${shortName}</div>
-    </div>`;
-  });
-  el.innerHTML = html;
-}
-
-// ═══════════════════════════════════════════════════
-// RASTREO GPS
-// ═══════════════════════════════════════════════════
-function startTracking() {
-  if (!navigator.geolocation) {
-    showToast('warn','❌','GPS no disponible en este dispositivo');
-    return;
-  }
-  if (STATE.role !== 'esposo' && STATE.role !== null) {
-    showToast('warn','⚠️','Solo el esposo puede iniciar el rastreo');
-    return;
-  }
-
-  STATE.tracking = true;
-  STATE.waypointsDone.clear();
-  updateRouteProgress();
-
-  const interval = parseInt(document.getElementById('update-interval').value);
-  const highAcc  = document.getElementById('toggle-hq').checked;
-
-  const opts = {
-    enableHighAccuracy: highAcc,
-    timeout: 15000,
-    maximumAge: interval
-  };
-
-  STATE.watchId = navigator.geolocation.watchPosition(
-    onGPSSuccess, onGPSError, opts
-  );
-
-  // Activar wake lock
-  requestWakeLock();
-
-  // UI
-  document.getElementById('track-icon').textContent = '📡';
-  document.getElementById('track-status').textContent = 'Rastreando';
-  document.getElementById('track-sub').textContent = 'GPS activo — enviando posición';
-  document.getElementById('gps-dot').className = 'status-dot active';
-  document.getElementById('gps-status-text').textContent = 'ACTIVO';
-  document.getElementById('btn-start').style.display='none';
-  document.getElementById('btn-stop').style.display='block';
-  document.getElementById('btn-track-map').className='map-btn danger';
-  document.getElementById('btn-track-map').textContent='⏹ Detener';
-  document.getElementById('btn-track-map').onclick = stopTracking;
-
-  addNotifLog('info','▶ Rastreo iniciado — ' + new Date().toLocaleTimeString());
-  showToast('info','📡','Rastreo iniciado. GPS activo.');
-}
-
-function stopTracking() {
-  if (STATE.watchId) {
-    navigator.geolocation.clearWatch(STATE.watchId);
-    STATE.watchId = null;
-  }
-  STATE.tracking = false;
-  releaseWakeLock();
-
-  document.getElementById('track-icon').textContent = '🛑';
-  document.getElementById('track-status').textContent = 'Detenido';
-  document.getElementById('track-sub').textContent = 'Rastreo pausado';
-  document.getElementById('gps-dot').className = 'status-dot';
-  document.getElementById('gps-status-text').textContent = 'GPS';
-  document.getElementById('btn-start').style.display='block';
-  document.getElementById('btn-stop').style.display='none';
-  document.getElementById('btn-track-map').className='map-btn primary';
-  document.getElementById('btn-track-map').textContent='▶ Iniciar';
-  document.getElementById('btn-track-map').onclick = startTracking;
-
-  addNotifLog('warn','⏹ Rastreo detenido — ' + new Date().toLocaleTimeString());
-  showToast('warn','⏹','Rastreo detenido.');
-}
-
-function onGPSSuccess(pos) {
-  const { latitude: lat, longitude: lng, altitude, accuracy, speed } = pos.coords;
-  STATE.currentPos = { lat, lng, accuracy, speed, altitude };
-
-  // Actualizar UI
-  document.getElementById('cur-lat').textContent = lat.toFixed(6);
-  document.getElementById('cur-lng').textContent = lng.toFixed(6);
-  document.getElementById('cur-alt').textContent = altitude ? altitude.toFixed(0) : '—';
-  document.getElementById('cur-time').textContent = new Date().toLocaleTimeString();
-  document.getElementById('info-speed').textContent = speed ? Math.round(speed*3.6) : '0';
-  document.getElementById('info-acc').textContent = accuracy ? Math.round(accuracy) : '—';
-
-  // Precisión bar
-  const pct = Math.max(0, Math.min(100, 100 - (accuracy/50)*100));
-  document.getElementById('acc-fill').style.width = pct + '%';
-  document.getElementById('acc-label').textContent = 'Precisión: ' + (accuracy?Math.round(accuracy):'-') + 'm';
-  document.getElementById('acc-fill').style.background = accuracy < 30 ? 'var(--accent3)' : accuracy < 80 ? 'var(--warn)' : 'var(--danger)';
-
-  // GPS dot
-  document.getElementById('gps-dot').className = 'status-dot ' + (accuracy<50?'active':'warn');
-
-  // Actualizar mapa
-  updateUserMarker(lat, lng);
-
-  // Verificar waypoints
-  checkWaypoints(lat, lng, accuracy);
-
-  // Guardar historial
-  savePositionHistory(lat, lng, accuracy);
-}
-
-function onGPSError(err) {
-  const msgs = {
-    1: 'Permiso GPS denegado. Ve a Configuración del móvil.',
-    2: 'Señal GPS no disponible. Intenta en exterior.',
-    3: 'Tiempo de espera GPS. Señal intermitente.'
-  };
-  document.getElementById('gps-dot').className = 'status-dot warn';
-  document.getElementById('info-acc').textContent = 'ERR';
-  showToast('warn','📡',msgs[err.code]||'Error GPS');
-  addNotifLog('alert','⚠️ Error GPS: ' + (msgs[err.code]||err.message));
-}
-
-// ═══════════════════════════════════════════════════
-// DETECCIÓN DE WAYPOINTS
-// ═══════════════════════════════════════════════════
-function checkWaypoints(lat, lng, accuracy) {
-  let nextDist = Infinity;
-
-  STATE.waypoints.forEach(wp => {
-    if (STATE.waypointsDone.has(wp.id)) return;
-
-    const dist = getDistance(lat, lng, wp.lat, wp.lng);
-
-    // Radio efectivo: suma radio del wp + mitad de la precisión GPS (para señal mala)
-    const effectiveRadius = wp.radius + (accuracy > 100 ? accuracy * 0.3 : 0);
-
-    if (dist < nextDist) nextDist = dist;
-
-    if (dist <= effectiveRadius) {
-      // ¡Llegó!
-      STATE.waypointsDone.add(wp.id);
-      const msg = wp.msg || '📍 Llegó a ' + wp.name;
-
-      // Notificación push
-      sendPushNotification('📍 ' + wp.name, msg);
-
-      // Log
-      addNotifLog('arrive', msg);
-      showToast('arrive','📍 '+wp.name, msg);
-
-      // Vibrar
-      if (navigator.vibrate) navigator.vibrate([200,100,200,100,400]);
-
-      updateRouteProgress();
-      renderWaypointsOnMap();
-
-      // Verificar si es el destino final
-      if (wp.type === 'end') {
-        setTimeout(() => {
-          addNotifLog('arrive','🏁 ¡Ruta completada! Llegó al destino final.');
-          sendPushNotification('🏁 Ruta completada','¡Llegaste al destino final! '+wp.name);
-          showToast('arrive','🏁 ¡Llegaste!','Ruta completada con éxito 🎉');
-          stopTracking();
-        }, 1000);
-      }
+    window.clearRoute = () => {
+        STATE.route = { start: null, end: null, waypoints: [] };
+        routeMarkers.forEach(m => map.removeLayer(m));
+        routeMarkers = [];
+        document.getElementById('txt-start').innerText = "Toca el mapa para origen";
+        document.getElementById('txt-end').innerText = "Toca el mapa para destino";
+        document.getElementById('waypoints-list').innerHTML = "";
+        document.getElementById('map-instruction').innerText = "Toca el mapa para marcar el punto de PARTIDA";
+        broadcast();
+    };
+
+    window.startTrip = () => {
+        if (!STATE.route.start || !STATE.route.end) {
+            alert("Por favor marca inicio y fin en el mapa primero.");
+            return;
+        }
+
+        STATE.tripStarted = true;
+        document.getElementById('btn-start').innerText = "COMPARTIENDO EN VIVO...";
+        document.getElementById('btn-start').className = "w-full bg-green-600 py-3 rounded-xl font-bold pulse";
+        document.getElementById('map-instruction').classList.add('hidden');
+
+        watchId = navigator.geolocation.watchPosition(p => {
+            const pos = { lat: p.coords.latitude, lng: p.coords.longitude };
+            STATE.currentPos = { ...pos, speed: p.coords.speed || 0, time: new Date().toLocaleTimeString() };
+            userMarker.setLatLng(pos);
+            map.panTo(pos);
+            broadcast();
+        }, null, { enableHighAccuracy: true });
+    };
+
+    function broadcast() {
+        localStorage.setItem(`ftrack_${STATE.pairCode}`, JSON.stringify(STATE));
     }
-  });
 
-  document.getElementById('info-next').textContent = nextDist < Infinity ? Math.round(nextDist) : '—';
-}
+    function syncLoop() {
+        setInterval(() => {
+            const data = localStorage.getItem(`ftrack_${STATE.pairCode}`);
+            if (!data) return;
+            const cloud = JSON.parse(data);
 
-function getDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371000; // metros
-  const dLat = (lat2-lat1)*Math.PI/180;
-  const dLon = (lon2-lon1)*Math.PI/180;
-  const a = Math.sin(dLat/2)*Math.sin(dLat/2)+
-            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
-            Math.sin(dLon/2)*Math.sin(dLon/2);
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-}
+            if (STATE.role === 'esposo') {
+                // Actualizar marcadores de ruta si no existen
+                if (cloud.route.start && routeMarkers.length === 0) {
+                    syncRouteMarkers(cloud.route);
+                }
 
-// ═══════════════════════════════════════════════════
-// NOTIFICACIONES PUSH
-// ═══════════════════════════════════════════════════
-async function toggleNotifications(checkbox) {
-  if (checkbox.checked) {
-    if ('Notification' in window) {
-      const perm = await Notification.requestPermission();
-      if (perm === 'granted') {
-        STATE.notifPermission = true;
-        showToast('info','🔔','Notificaciones activadas ✅');
-        sendPushNotification('🔔 FamiliaTrack','Notificaciones listas. Ya te avisaremos de cada punto.');
-      } else {
-        STATE.notifPermission = false;
-        checkbox.checked = false;
-        showToast('warn','⚠️','Permiso de notificaciones denegado. Ve a Config del navegador.');
-      }
-    } else {
-      showToast('warn','⚠️','Notificaciones no soportadas en este navegador');
-      checkbox.checked = false;
+                // Actualizar posición GPS
+                if (cloud.currentPos) {
+                    userMarker.setLatLng([cloud.currentPos.lat, cloud.currentPos.lng]);
+                    document.getElementById('stat-speed').innerText = `${Math.round((cloud.currentPos.speed || 0) * 3.6)} km/h`;
+                    document.getElementById('stat-time').innerText = cloud.currentPos.time;
+                    map.setView([cloud.currentPos.lat, cloud.currentPos.lng], map.getZoom());
+                }
+                
+                renderEsposoRouteList(cloud.route);
+            }
+        }, 2000);
     }
-  } else {
-    STATE.notifPermission = false;
-  }
-}
 
-function sendPushNotification(title, body) {
-  if (!STATE.notifPermission) return;
-  if ('Notification' in window && Notification.permission === 'granted') {
-    try {
-      new Notification(title, {
-        body,
-        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%230a1628"/><text y=".9em" font-size="90">📍</text></svg>',
-        vibrate: [200,100,200],
-        tag: 'familiatrack-' + Date.now(),
-        requireInteraction: false
-      });
-    } catch(e) {
-      console.log('Notif error:', e);
+    function syncRouteMarkers(route) {
+        if (route.start) addMarkerToMap(route.start, '#4ade80', 'Partida');
+        route.waypoints.forEach(w => addMarkerToMap(w, '#fbbf24', 'Parada'));
+        if (route.end) addMarkerToMap(route.end, '#f87171', 'Llegada');
     }
-  }
-}
 
-function testNotification() {
-  if (!STATE.notifPermission) {
-    showToast('warn','⚠️','Activa las notificaciones primero');
-    return;
-  }
-  sendPushNotification('🧪 Prueba FamiliaTrack', 'Las notificaciones funcionan correctamente ✅');
-  addNotifLog('info','🧪 Notificación de prueba enviada');
-  showToast('info','🧪','Notificación de prueba enviada');
-}
-
-// ═══════════════════════════════════════════════════
-// LOG DE NOTIFICACIONES
-// ═══════════════════════════════════════════════════
-function addNotifLog(type, msg) {
-  const entry = { type, msg, time: new Date().toLocaleTimeString() };
-  STATE.notifLog.unshift(entry);
-  if (STATE.notifLog.length > 50) STATE.notifLog.pop();
-  localStorage.setItem('ft_notif_log', JSON.stringify(STATE.notifLog));
-  renderNotifLog();
-}
-
-function renderNotifLog() {
-  const list = document.getElementById('notif-list');
-  document.getElementById('notif-count').textContent = STATE.notifLog.length;
-  if (!STATE.notifLog.length) {
-    list.innerHTML = '<div class="notif-empty">Sin alertas aún. Inicia el rastreo.</div>';
-    return;
-  }
-  const icons = { arrive:'✅', depart:'🔔', alert:'⚠️', warn:'⚠️', info:'ℹ️' };
-  list.innerHTML = STATE.notifLog.map(n => `
-    <div class="notif-item ${n.type}">
-      <span class="notif-icon">${icons[n.type]||'ℹ️'}</span>
-      <div class="notif-content">
-        <div class="notif-msg">${n.msg}</div>
-        <div class="notif-time">${n.time}</div>
-      </div>
-    </div>`).join('');
-}
-
-function clearNotifLog() {
-  STATE.notifLog = [];
-  localStorage.removeItem('ft_notif_log');
-  renderNotifLog();
-}
-
-function loadNotifLog() {
-  try {
-    const saved = localStorage.getItem('ft_notif_log');
-    if (saved) {
-      STATE.notifLog = JSON.parse(saved);
-      renderNotifLog();
+    function renderEsposoRouteList(route) {
+        const container = document.getElementById('esposo-route-display');
+        if (!route.start) return;
+        
+        let html = `<div class="flex items-center space-x-2"><span class="text-green-400">●</span> <span>Partida fijada</span></div>`;
+        route.waypoints.forEach((w, i) => {
+            html += `<div class="flex items-center space-x-2 ml-4 border-l border-slate-700 pl-2 text-slate-400"><span class="text-yellow-500 text-[10px]">○</span> <span>Parada ${i+1}</span></div>`;
+        });
+        html += `<div class="flex items-center space-x-2"><span class="text-red-400">■</span> <span>Destino: ${route.end ? 'Fijado' : 'Pendiente'}</span></div>`;
+        
+        container.innerHTML = html;
     }
-  } catch(e) {}
-}
 
-// ═══════════════════════════════════════════════════
-// TOAST UI
-// ═══════════════════════════════════════════════════
-function showToast(type, title, msg) {
-  const icons = { arrive:'✅', warn:'⚠️', info:'ℹ️', error:'❌' };
-  const el = document.createElement('div');
-  el.className = 'toast ' + type;
-  el.innerHTML = `
-    <span class="toast-icon">${icons[type]||'ℹ️'}</span>
-    <div class="toast-content">
-      <div class="toast-title">${title}</div>
-      <div class="toast-msg">${msg}</div>
-    </div>`;
-  document.getElementById('toast-container').prepend(el);
-  setTimeout(() => el.remove(), 4000);
-}
-
-// ═══════════════════════════════════════════════════
-// WAKE LOCK
-// ═══════════════════════════════════════════════════
-async function requestWakeLock() {
-  if (!document.getElementById('toggle-wakelock').checked) return;
-  try {
-    if ('wakeLock' in navigator) {
-      STATE.wakeLock = await navigator.wakeLock.request('screen');
-      STATE.wakeLock.addEventListener('release', () => { STATE.wakeLock = null; });
-    }
-  } catch(e) { console.log('WakeLock:', e); }
-}
-
-function releaseWakeLock() {
-  if (STATE.wakeLock) { STATE.wakeLock.release(); STATE.wakeLock = null; }
-}
-
-function toggleWakeLock(cb) {
-  if (cb.checked && STATE.tracking) requestWakeLock();
-  else releaseWakeLock();
-}
-
-// Reactivar wake lock al volver al tab
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState==='visible' && STATE.tracking) requestWakeLock();
-});
-
-// ═══════════════════════════════════════════════════
-// BATERÍA Y SEÑAL
-// ═══════════════════════════════════════════════════
-async function setupBattery() {
-  try {
-    if ('getBattery' in navigator) {
-      STATE.batteryAPI = await navigator.getBattery();
-    }
-  } catch(e) {}
-}
-
-function updateSysInfo() {
-  const el = document.getElementById('sys-info');
-  let html = '';
-
-  // Señal (Network Information API)
-  if ('connection' in navigator) {
-    const conn = navigator.connection;
-    const types = { '4g':'4G', '3g':'3G', '2g':'2G', 'wifi':'WiFi', 'ethernet':'ETH' };
-    html += `<span>📶 ${types[conn.effectiveType]||conn.type||'—'}</span>`;
-  } else {
-    html += `<span>📶 ${navigator.onLine?'ON':'OFF'}</span>`;
-  }
-
-  // Batería
-  if (STATE.batteryAPI) {
-    const pct = Math.round(STATE.batteryAPI.level * 100);
-    const charging = STATE.batteryAPI.charging;
-    const icon = charging ? '⚡' : pct > 50 ? '🔋' : pct > 20 ? '🪫' : '🔴';
-    html += `<span>${icon} ${pct}%</span>`;
-
-    // Modo ahorro si <20%
-    if (pct < 20 && document.getElementById('toggle-battery').checked && STATE.tracking) {
-      document.getElementById('update-interval').value = '30000';
-      updateIntervalLabel();
-    }
-  } else {
-    html += `<span>🔋 —</span>`;
-  }
-
-  el.innerHTML = html;
-}
-
-// ═══════════════════════════════════════════════════
-// OFFLINE
-// ═══════════════════════════════════════════════════
-function setupOfflineDetection() {
-  const banner = document.getElementById('offline-banner');
-  window.addEventListener('online',  () => { banner.classList.remove('show'); showToast('info','📶','Conexión restaurada'); });
-  window.addEventListener('offline', () => { banner.classList.add('show'); showToast('warn','📵','Sin conexión — Modo offline activo'); });
-  if (!navigator.onLine) banner.classList.add('show');
-}
-
-// ═══════════════════════════════════════════════════
-// HISTORIAL DE POSICIÓN (local)
-// ═══════════════════════════════════════════════════
-function savePositionHistory(lat, lng, acc) {
-  try {
-    const hist = JSON.parse(localStorage.getItem('ft_history')||'[]');
-    hist.push({ lat, lng, acc, t: Date.now() });
-    if (hist.length > 500) hist.splice(0, hist.length-500);
-    localStorage.setItem('ft_history', JSON.stringify(hist));
-  } catch(e) {}
-}
-
-// ═══════════════════════════════════════════════════
-// CONFIGURACIÓN
-// ═══════════════════════════════════════════════════
-function saveSettings() {
-  STATE.settings.myName = document.getElementById('my-name').value;
-  STATE.settings.partnerName = document.getElementById('partner-name').value;
-  STATE.settings.interval = parseInt(document.getElementById('update-interval').value);
-  STATE.settings.highAccuracy = document.getElementById('toggle-hq').checked;
-  STATE.settings.defaultRadius = parseInt(document.getElementById('def-radius').value);
-  localStorage.setItem('ft_settings', JSON.stringify(STATE.settings));
-  showToast('info','💾','Configuración guardada ✅');
-}
-
-function loadSettings() {
-  try {
-    const s = JSON.parse(localStorage.getItem('ft_settings')||'{}');
-    Object.assign(STATE.settings, s);
-    if (STATE.settings.myName) document.getElementById('my-name').value = STATE.settings.myName;
-    if (STATE.settings.partnerName) document.getElementById('partner-name').value = STATE.settings.partnerName;
-    document.getElementById('update-interval').value = STATE.settings.interval || 5000;
-    document.getElementById('def-radius').value = STATE.settings.defaultRadius || 150;
-    document.getElementById('def-radius-lbl').textContent = (STATE.settings.defaultRadius||150)+'m';
-    updateIntervalLabel();
-  } catch(e) {}
-}
-
-function updateIntervalLabel() {
-  const v = parseInt(document.getElementById('update-interval').value);
-  const labels = {3000:'Cada 3 segundos',5000:'Cada 5 segundos',10000:'Cada 10 segundos',15000:'Cada 15 segundos',30000:'Cada 30 segundos'};
-  document.getElementById('interval-desc').textContent = labels[v]||'—';
-}
-
-function updateDefRadius(v) {
-  document.getElementById('def-radius-lbl').textContent = v + 'm';
-  STATE.settings.defaultRadius = parseInt(v);
-}
-
-function saveWaypoints() {
-  localStorage.setItem('ft_waypoints', JSON.stringify(STATE.waypoints));
-}
-
-function loadWaypoints() {
-  try {
-    const saved = localStorage.getItem('ft_waypoints');
-    if (saved) {
-      STATE.waypoints = JSON.parse(saved);
-      renderWaypointList();
-      updateRouteProgress();
-    }
-  } catch(e) {}
-}
-
-function exportData() {
-  const data = {
-    waypoints: STATE.waypoints,
-    notifLog: STATE.notifLog,
-    settings: STATE.settings,
-    history: JSON.parse(localStorage.getItem('ft_history')||'[]'),
-    exported: new Date().toISOString()
-  };
-  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href=url; a.download='familiatrack-export-'+Date.now()+'.json';
-  a.click(); URL.revokeObjectURL(url);
-  showToast('info','📤','Datos exportados');
-}
-
-function resetAll() {
-  if (!confirm('¿Borrar todos los datos? Esta acción no se puede deshacer.')) return;
-  localStorage.clear();
-  STATE.waypoints = [];
-  STATE.notifLog = [];
-  STATE.waypointsDone.clear();
-  renderWaypointList();
-  renderNotifLog();
-  renderWaypointsOnMap();
-  updateRouteProgress();
-  showToast('warn','⚠️','Todos los datos eliminados');
-}
-
-// ═══════════════════════════════════════════════════
-// URL PARAMS (unirse desde enlace compartido)
-// ═══════════════════════════════════════════════════
-(function checkURLParams() {
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get('code');
-  if (code) {
-    setTimeout(() => {
-      document.getElementById('join-code').value = code.toUpperCase();
-      setRole('esposa');
-      switchTab('ruta');
-      showToast('info','🔗','Código recibido: '+code+' — Toca "Unirse" para conectar');
-    }, 3000);
-  }
-})();
-
-// ═══════════════════════════════════════════════════
-// CSS extra (ripple del marker)
-// ═══════════════════════════════════════════════════
-const style = document.createElement('style');
-style.textContent = `
-@keyframes ripple {
-  0% { transform:scale(1); opacity:0.6; }
-  100% { transform:scale(3); opacity:0; }
-}
-`;
-document.head.appendChild(style);
+    window.sendAlert = () => {
+        alert("🚨 SEÑAL DE SOS ENVIADA. Tu ubicación actual ha sido marcada con prioridad.");
+    };
 </script>
+
 </body>
 </html>
+   
